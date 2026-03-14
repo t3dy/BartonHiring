@@ -816,17 +816,66 @@ const effectivenessIcon = (e: string) => {
 };
 
 /* ─── Software & Ad summaries ─── */
-const softwareTiers = [
+interface ToolInfo {
+  name: string;
+  desc: string;
+  details: string;
+  url?: string;
+  stages: string;
+  buildTime?: string;
+  buildCost?: string;
+  monthlyCost?: string;
+  techStack?: string;
+}
+
+interface SoftwareTier {
+  name: string;
+  color: string;
+  icon: React.FC<{ className?: string }>;
+  tools: ToolInfo[];
+}
+
+const softwareTiers: SoftwareTier[] = [
   {
     name: 'Free Tools',
     color: 'bg-emerald-50 border-emerald-200 text-emerald-700',
     icon: Globe,
     tools: [
-      { name: 'Google Sheets / Forms / Docs', desc: 'Track applicants, create application forms, write job descriptions, build checklists. The Swiss army knife of small business hiring.' },
-      { name: 'Indeed (organic listings)', desc: '#1 job board for blue-collar hiring. Free posts get visibility but sponsored posts get 3-5x more applicants.' },
-      { name: 'Facebook Jobs', desc: 'Free job postings on Facebook. Reaches people where they already spend time. Good for local Austin recruiting.' },
-      { name: 'E-Verify', desc: 'Free federal system to verify employment authorization electronically. Legally required I-9 compliance.' },
-      { name: 'Homebase (free tier)', desc: 'Free scheduling, time tracking, and basic team communication. Great starting point for small crews.' },
+      {
+        name: 'Google Sheets / Forms / Docs',
+        desc: 'Track applicants, create application forms, write job descriptions, build checklists. The Swiss army knife of small business hiring.',
+        details: 'Sheets can serve as a basic applicant tracking system \u2014 columns for name, phone, source, status, notes, and hire date. Forms can be your application \u2014 embed it on your website or text the link to walk-ins. Docs handles job descriptions, offer letters, and SOPs. The limitation: no automation, no notifications, no conflict detection. You have to manually check and update everything. Works fine for 1-3 hires at a time but gets chaotic during peak season when you\'re screening 20+ applicants.',
+        url: 'https://workspace.google.com/',
+        stages: 'Plan, Recruit, Screen, Onboard, Manage',
+      },
+      {
+        name: 'Indeed (organic listings)',
+        desc: '#1 job board for blue-collar hiring. Free posts get visibility but sponsored posts get 3-5x more applicants.',
+        details: 'Indeed dominates the blue-collar job market \u2014 it\'s where movers, drivers, and laborers go to find work. Your free listing appears in search results but gets buried fast (new posts every hour). The platform includes a built-in messaging system, resume database search, and basic applicant tracking. Indeed also offers skills assessments you can attach to your listing (e.g., "reliability" or "physical fitness" quizzes). The Indeed Employer app lets you review and message candidates from your phone. For Austin specifically, Indeed consistently outperforms other job boards for moving and labor positions.',
+        url: 'https://employers.indeed.com/',
+        stages: 'Recruit',
+      },
+      {
+        name: 'Facebook Jobs',
+        desc: 'Free job postings on Facebook. Reaches people where they already spend time. Good for local Austin recruiting.',
+        details: 'Post a job directly from your Facebook business page \u2014 it shows up in the Jobs tab and can appear in News Feed. Candidates apply with one tap using their Facebook profile info, which lowers the friction compared to a formal application. You can also share the job post to Austin community groups (ATX Jobs, Austin Blue Collar Workers, etc.) for extra reach. Facebook\'s targeting means your post naturally reaches people in your area who fit the demographic. The downside: no applicant tracking beyond the basic Facebook inbox, and you\'ll get some low-quality applications since it\'s so easy to apply.',
+        url: 'https://www.facebook.com/jobs/',
+        stages: 'Recruit',
+      },
+      {
+        name: 'E-Verify',
+        desc: 'Free federal system to verify employment authorization electronically. Legally required I-9 compliance.',
+        details: 'E-Verify is the federal government\'s electronic system for verifying that new employees are authorized to work in the United States. After completing the I-9 form (which you\'re legally required to do within 3 days of hire), you enter the information into E-Verify and get a result \u2014 usually within seconds. It cross-references Social Security Administration and Department of Homeland Security databases. While E-Verify itself is voluntary in Texas (unlike some states that mandate it), many moving companies use it as a best practice. It\'s completely free and protects you from unknowingly hiring unauthorized workers, which carries penalties of $252-$2,507 per I-9 violation.',
+        url: 'https://www.e-verify.gov/',
+        stages: 'Screen, Paperwork',
+      },
+      {
+        name: 'Homebase (free tier)',
+        desc: 'Free scheduling, time tracking, and basic team communication. Great starting point for small crews.',
+        details: 'Homebase\'s free plan covers one location with unlimited employees \u2014 perfect for a single-warehouse moving company. You get: a weekly schedule builder where you assign crew members to shifts, a mobile time clock where movers clock in/out from their phone (with GPS verification so you know they\'re at the job site), team messaging, and basic hiring tools (job posting, applicant tracking). The free tier doesn\'t include shift trading, labor cost forecasting, or advanced HR features \u2014 those start at $20/mo. But for a 2-3 crew operation, the free plan covers 80% of what you need. The mobile app is solid and movers actually use it.',
+        url: 'https://joinhomebase.com/',
+        stages: 'Plan, Recruit, Paperwork, Onboard, Retain, Manage',
+      },
     ],
   },
   {
@@ -834,10 +883,34 @@ const softwareTiers = [
     color: 'bg-brand-50 border-brand-200 text-brand-700',
     icon: Monitor,
     tools: [
-      { name: 'Gusto ($40+$6/person/mo)', desc: 'All-in-one payroll, benefits, HR, and onboarding. Handles W-4s, I-9s, workers comp, and direct deposit. Best value for small teams.' },
-      { name: 'Homebase Pro ($20-80/mo)', desc: 'Advanced scheduling, shift swaps, labor cost tracking, hiring tools, and performance tracking.' },
-      { name: 'JazzHR ($49/mo)', desc: 'Applicant tracking system with job posting syndication, candidate pipeline, and interview scheduling.' },
-      { name: 'Checkr ($29-85/check)', desc: 'Background checks, MVR reports, drug screening coordination. Fast results (1-3 days) and candidate-friendly.' },
+      {
+        name: 'Gusto ($40+$6/person/mo)',
+        desc: 'All-in-one payroll, benefits, HR, and onboarding. Handles W-4s, I-9s, workers comp, and direct deposit. Best value for small teams.',
+        details: 'Gusto replaces your accountant for payroll and your filing cabinet for HR paperwork. New hires get a self-service onboarding link where they fill out W-4, I-9, direct deposit, and emergency contacts electronically \u2014 no paper forms to lose. Payroll runs automatically on your schedule (weekly or biweekly), calculating taxes, deductions, and direct deposits. Gusto handles Texas state compliance, workers\' comp integration (they can even broker your policy), and year-end tax forms (W-2s). The platform also tracks PTO, manages benefits enrollment if you offer health insurance, and stores all employee documents. For a 2-3 crew operation with 9-15 employees, you\'re looking at $94-130/month \u2014 less than one hour of an accountant\'s time. The mobile app lets you run payroll from your phone.',
+        url: 'https://gusto.com/',
+        stages: 'Paperwork, Retain, Manage',
+      },
+      {
+        name: 'Homebase Pro ($20-80/mo)',
+        desc: 'Advanced scheduling, shift swaps, labor cost tracking, hiring tools, and performance tracking.',
+        details: 'The paid tiers add the features that matter during peak season. The Essentials plan ($20/mo) adds shift trading (crew members can swap shifts without calling you), early access to schedules, and basic labor cost tracking so you can see what each crew costs per job. The Plus plan ($48/mo) adds labor cost controls with real-time alerts (get notified when overtime is approaching), manager permissions for crew leads, and PTO tracking. The All-in-One plan ($80/mo) adds the hiring module (post to Indeed, ZipRecruiter, and other boards from one place), new hire onboarding packets, performance reviews, and document storage. The hiring module alone can save $50-100/mo compared to a standalone ATS like JazzHR.',
+        url: 'https://joinhomebase.com/pricing/',
+        stages: 'Plan, Recruit, Screen, Onboard, Retain, Manage',
+      },
+      {
+        name: 'JazzHR ($49/mo)',
+        desc: 'Applicant tracking system with job posting syndication, candidate pipeline, and interview scheduling.',
+        details: 'JazzHR is a dedicated applicant tracking system (ATS) \u2014 it does one thing well: manage the flow of candidates from application to hire. You write a job description once and it syndicates to Indeed, ZipRecruiter, Glassdoor, and other boards simultaneously. Every applicant flows into a visual pipeline (New \u2192 Phone Screen \u2192 Working Interview \u2192 Offer \u2192 Hired) so you can see where everyone stands at a glance. It includes customizable application forms, automated email responses ("Thanks for applying, we\'ll be in touch"), interview scheduling with calendar integration, collaborative hiring notes (crew lead can rate the working interview), and offer letter templates. For a company hiring 8-12 people per year, JazzHR replaces the scattered texts, emails, and sticky notes with one organized system. The $49/mo Hero plan supports up to 3 open jobs at a time.',
+        url: 'https://www.jazzhr.com/',
+        stages: 'Recruit, Screen, Interview',
+      },
+      {
+        name: 'Checkr ($29-85/check)',
+        desc: 'Background checks, MVR reports, drug screening coordination. Fast results (1-3 days) and candidate-friendly.',
+        details: 'Checkr is the modern background check service that most startups and growing companies use. You send the candidate a link, they consent and enter their info, and Checkr runs the checks \u2014 no SSN collection on your end. The Basic package ($29) covers Social Security trace, national criminal database, and sex offender registry. The Standard package ($54) adds county criminal court records (more thorough than the national database alone). The Pro package ($85) adds federal criminal search, education verification, and employment verification. Motor Vehicle Record (MVR) checks for truck drivers are $5-15 extra. Results typically come back in 1-3 business days \u2014 faster than the old-school services that take a week. Checkr is also compliant with FCRA (Fair Credit Reporting Act) requirements, which protects you legally. They handle the adverse action process if you need to reject someone based on findings.',
+        url: 'https://checkr.com/',
+        stages: 'Screen',
+      },
     ],
   },
   {
@@ -845,9 +918,27 @@ const softwareTiers = [
     color: 'bg-violet-50 border-violet-200 text-violet-700',
     icon: Smartphone,
     tools: [
-      { name: 'Workable ($149/mo)', desc: 'Full applicant tracking with AI screening, video interviews, and 200+ job board integrations.' },
-      { name: 'Trainual ($99/mo)', desc: 'Digital training manuals with progress tracking. Build SOPs once, assign to every new hire automatically.' },
-      { name: 'Staffing Agencies ($18-25/hr)', desc: 'PeopleReady, Labor Finders. Instant crew members for surge demand. Expensive long-term but invaluable in emergencies.' },
+      {
+        name: 'Workable ($149/mo)',
+        desc: 'Full applicant tracking with AI screening, video interviews, and 200+ job board integrations.',
+        details: 'Workable is the enterprise-grade ATS that does everything JazzHR does and more, but at a higher price point. The standout feature is AI-powered candidate screening \u2014 it reads resumes and surfaces the best matches based on your criteria. It includes one-way video interviews (candidate records answers to your questions on their own time \u2014 great for phone screen replacement), built-in reference checking, offer management, and e-signatures. It posts to 200+ job boards including niche sites. Workable also has a mobile app so you can review candidates between jobs. For a 2-3 crew operation, this is probably overkill \u2014 JazzHR or even Homebase\'s hiring module covers what you need at a fraction of the price. But if you\'re scaling to 5+ crews and hiring 30+ people per year, Workable\'s automation starts paying for itself.',
+        url: 'https://www.workable.com/',
+        stages: 'Recruit, Screen, Interview',
+      },
+      {
+        name: 'Trainual ($99/mo)',
+        desc: 'Digital training manuals with progress tracking. Build SOPs once, assign to every new hire automatically.',
+        details: 'Trainual turns your tribal knowledge into a structured training system. You create "subjects" (Moving Fundamentals, Customer Service, Safety, Company Policies) with steps that include text, images, videos, and screen recordings. When a new hire starts, you assign them the "New Mover" training track and they work through it at their own pace \u2014 from their phone during downtime or at home. Each step has a completion checkbox, and some can include quizzes ("What do you do if a customer reports damage?"). You can see exactly where each new hire is in their training: Day 3 and they haven\'t started Safety training? Flag it. The real value is consistency \u2014 every new mover gets the same training regardless of which crew lead they shadow. You build it once and it runs forever. $99/mo covers up to 50 employees. The ROI calculation: if standardized training prevents even one damage claim ($500-2,000) per quarter, it pays for itself.',
+        url: 'https://trainual.com/',
+        stages: 'Onboard',
+      },
+      {
+        name: 'Staffing Agencies ($18-25/hr)',
+        desc: 'PeopleReady, Labor Finders. Instant crew members for surge demand. Expensive long-term but invaluable in emergencies.',
+        details: 'Staffing agencies are the emergency room of hiring \u2014 expensive, but they save you when you\'re in crisis. PeopleReady (formerly Labor Ready) has an app where you can request workers for the next day. Labor Finders is another major player in Austin. You pay a marked-up hourly rate ($18-25/hr when the worker might earn $14-16) \u2014 the agency handles payroll, workers\' comp, and taxes for those workers. The workers are not vetted to your standards (they may never have moved furniture before), so pair them with experienced crew members. Best use cases: a mover no-shows on a 3-bedroom move, peak summer demand exceeds your crew capacity, or you\'re testing whether you need a permanent hire. Bad use case: relying on temp workers as your regular crew. The quality is inconsistent, they don\'t know your procedures, and customers notice the difference. Think of staffing agencies as a bridge, not a foundation.',
+        url: 'https://www.peopleready.com/',
+        stages: 'Recruit, Manage',
+      },
     ],
   },
   {
@@ -855,10 +946,66 @@ const softwareTiers = [
     color: 'bg-amber-50 border-amber-200 text-amber-700',
     icon: Zap,
     tools: [
-      { name: 'Hiring Pipeline Dashboard', desc: 'Track every applicant from first contact to 90-day review. See where candidates drop off and which sources produce the best hires.' },
-      { name: 'Application Auto-Scorer', desc: 'Score incoming applications automatically based on your criteria. Flag top candidates instantly.' },
-      { name: 'Training Progress Tracker', desc: 'Checklist-based onboarding with video modules and sign-off tracking. Know exactly where each new hire is in training.' },
-      { name: 'Performance Dashboard', desc: 'Track mover metrics (jobs, ratings, attendance, damage) and tie them to bonuses automatically.' },
+      {
+        name: 'Hiring Pipeline Dashboard',
+        desc: 'Track every applicant from first contact to 90-day review. See where candidates drop off and which sources produce the best hires.',
+        details: 'A custom applicant tracking board built specifically for your hiring process \u2014 not a generic HR tool with features you\'ll never use. The dashboard shows every candidate as a card moving through your pipeline: Applied \u2192 Phone Screen \u2192 Working Interview \u2192 Background Check \u2192 Offer \u2192 Hired \u2192 90-Day Review. Each card shows their name, phone, source (Indeed, referral, walk-in), date applied, and crew lead notes. You can filter by status, sort by date, and search by name. The magic is in the analytics: which recruiting source produces the most hires? What\'s your average time-to-hire? Where do candidates drop off? If 60% of your Indeed applicants ghost after the phone screen, you know to improve that step. Unlike JazzHR ($49/mo), you own it forever and it\'s designed exactly for how a moving company hires.',
+        buildTime: '2-3 days',
+        buildCost: '$600',
+        monthlyCost: '$0-10/mo',
+        techStack: 'React, Supabase, Vercel',
+        stages: 'Recruit, Screen, Interview, Paperwork',
+      },
+      {
+        name: 'Application Auto-Scorer',
+        desc: 'Score incoming applications automatically based on your criteria. Flag top candidates instantly.',
+        details: 'When someone fills out your application form, this system automatically scores them based on weighted criteria you define: Has moving experience? (+20 points) Has valid driver\'s license? (+15) Lives within 30 minutes of warehouse? (+10) Available weekends? (+15) Has reliable transportation? (+10) Has references? (+5) Prior no-shows at previous jobs? (-30). Each application gets a score out of 100 and a color: green (70+, call immediately), yellow (40-69, worth a phone screen), red (below 40, probably skip). You get an email or text notification for every green candidate so you can call them within hours \u2014 before a competitor does. The scoring weights are adjustable: if you care more about weekend availability than experience, bump that weight up. This replaces the 30 minutes you spend reading each application and making a gut call. Built as a Google Apps Script integration (runs inside your existing Google Forms) or as a standalone form. No monthly fees \u2014 it runs on Google\'s infrastructure.',
+        buildTime: '1-2 days',
+        buildCost: '$300-400',
+        monthlyCost: '$0',
+        techStack: 'Google Apps Script or React + Supabase',
+        stages: 'Screen',
+      },
+      {
+        name: 'Training Progress Tracker',
+        desc: 'Checklist-based onboarding with video modules and sign-off tracking. Know exactly where each new hire is in training.',
+        details: 'A digital training checklist that replaces the "shadow someone for 3 days and hope they learn" approach. Each new hire gets a profile with training modules organized by category: Moving Fundamentals (12 items: blanket wrapping, stair carries, truck loading, furniture disassembly...), Customer Service (6 items: greeting script, damage reporting, complaint handling...), Safety (8 items: heat protocol, lifting technique, PPE, injury reporting...), Company Procedures (5 items: clock-in, dispatch communication, tip policy...). Each item can have: a description of what to learn, a link to a training video (filmed on your phone, hosted on YouTube unlisted), a checkbox for the trainee to mark complete, and a sign-off field for the crew lead to confirm they witnessed it. The dashboard shows all active trainees with progress bars \u2014 "Marcus: 67% complete, missing Safety module." Crew leads can sign off from their phones between jobs. Replaces Trainual ($99/mo = $1,188/year) with a one-time investment.',
+        buildTime: '2-3 days',
+        buildCost: '$500',
+        monthlyCost: '$0-10/mo',
+        techStack: 'React, Supabase, YouTube (unlisted)',
+        stages: 'Onboard',
+      },
+      {
+        name: 'Mover Performance Dashboard',
+        desc: 'Track mover metrics (jobs, ratings, attendance, damage) and tie them to bonuses automatically.',
+        details: 'A scoreboard for your crew that turns gut feelings ("he\'s a hard worker") into measurable data. Each mover has a profile showing: jobs completed this month/quarter/year, customer ratings (from your review system \u2014 5-star reviews that mention their name), on-time percentage (clocked in within 10 minutes of scheduled start), damage incidents (logged by crew leads), attendance record (no-shows, callouts, late arrivals), and a calculated performance score. The bonus engine runs automatically: zero damage incidents this month = $50 bonus, named in a 5-star review = $15 bonus, perfect attendance = $25 bonus, referral hire who stays 90 days = $200 bonus. Movers can see their own dashboard on their phone \u2014 gamification drives behavior. Top performers see their name on a leaderboard. This is the most complex custom build but has the highest ROI: it directly reduces turnover (people stay where they feel recognized) and reduces damage (people are more careful when it\'s tracked). Pulls data from Homebase (time tracking), Google Reviews, and crew lead reports.',
+        buildTime: '3-5 days',
+        buildCost: '$800',
+        monthlyCost: '$10/mo',
+        techStack: 'React, Supabase, Recharts, API integrations',
+        stages: 'Retain, Manage',
+      },
+      {
+        name: 'Seasonal Staffing Predictor',
+        desc: 'Forecast crew needs by month based on historical job volume, with temp vs permanent hire recommendations.',
+        details: 'This tool takes your historical job data (or estimates if you don\'t have data yet) and predicts how many crew members you need each month. Input: average jobs per month by season (January: 8, June: 25, etc.), crew size per job type (studio: 2, 3BR: 3, commercial: 4-5), your current roster, and maximum capacity per crew. Output: a month-by-month staffing plan showing required headcount, current gap, and recommendations \u2014 "March: 3 crews needed, you have 2.5 crews, hire 2 movers by March 1 or book 1 temp per week." It also models the financial impact: "Hiring 2 permanent movers in March costs $X but saves $Y in staffing agency markup through September." The seasonal model for Austin is well-documented: slow Nov-Feb, ramp-up March-April, peak May-September, wind-down October. This is a glorified spreadsheet with a nice UI \u2014 but it forces you to plan instead of react.',
+        buildTime: '1-2 days',
+        buildCost: '$400',
+        monthlyCost: '$0',
+        techStack: 'React, local calculations (no backend needed)',
+        stages: 'Plan',
+      },
+      {
+        name: 'Referral & Bonus Tracker',
+        desc: 'Track employee referrals, calculate earned bonuses, and show movers their rewards in real time.',
+        details: 'A simple system that makes your referral program actually work. When a mover refers someone, they log it in the app (or you log it for them). The system tracks: who referred whom, the referral\'s hire date, their 30/60/90-day milestones, and the referral bonus status (pending \u2192 eligible \u2192 paid). The referring mover sees their dashboard: "You referred Marcus (hired 3/1) \u2014 90-day bonus of $200 unlocks June 1." This also extends to performance bonuses: the system aggregates data from reviews, attendance, and damage reports to calculate monthly bonuses and shows each mover what they\'ve earned, what\'s pending, and what they need to hit their next bonus. Transparency drives participation \u2014 when movers see that referrals actually pay out, they recruit harder. Integrates with your payroll (Gusto) to flag bonus payments.',
+        buildTime: '1-2 days',
+        buildCost: '$400',
+        monthlyCost: '$0',
+        techStack: 'React, Supabase',
+        stages: 'Recruit, Retain',
+      },
     ],
   },
 ];
@@ -907,6 +1054,61 @@ const adCategories = [
     ],
   },
 ];
+
+/* ─── Tool Card Component (for software summary) ─── */
+function ToolCard({ tool, isCustom }: { tool: ToolInfo; isCustom?: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="rounded-xl bg-white/80 overflow-hidden border border-white/50">
+      <div className="p-4">
+        <p className="font-semibold text-gray-900">{tool.name}</p>
+        <p className="mt-1 text-sm text-gray-600">{tool.desc}</p>
+        {isCustom && tool.buildCost && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+              <DollarSign className="h-3 w-3" /> {tool.buildCost}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+              <Clock className="h-3 w-3" /> {tool.buildTime}
+            </span>
+            {tool.monthlyCost && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                {tool.monthlyCost === '$0' ? 'No monthly cost' : `${tool.monthlyCost} ongoing`}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-center gap-1 border-t border-gray-100 py-2 text-xs font-medium text-brand-600 hover:bg-brand-50/50 transition-colors"
+      >
+        {expanded ? <>Less detail <ChevronUp className="h-3 w-3" /></> : <>More detail <ChevronDown className="h-3 w-3" /></>}
+      </button>
+      {expanded && (
+        <div className="border-t border-gray-100 px-4 py-3 space-y-3 bg-white/60">
+          <p className="text-sm text-gray-700 leading-relaxed">{tool.details}</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+            <span><span className="font-semibold text-gray-600">Used in:</span> {tool.stages}</span>
+            {tool.url && (
+              <a href={tool.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-600 hover:underline">
+                Website <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+          {isCustom && tool.techStack && (
+            <div className="rounded-lg bg-brand-50 border border-brand-100 p-3">
+              <p className="text-xs font-semibold text-brand-700 mb-1">How I&apos;d build it</p>
+              <p className="text-xs text-gray-600"><span className="font-semibold">Tech stack:</span> {tool.techStack}</p>
+              {tool.buildCost && <p className="text-xs text-gray-600 mt-1"><span className="font-semibold">One-time cost:</span> {tool.buildCost} &middot; <span className="font-semibold">Build time:</span> {tool.buildTime} &middot; <span className="font-semibold">Monthly:</span> {tool.monthlyCost}</p>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ─── Action Card Component ─── */
 function ActionCard({ a }: { a: HiringAction }) {
@@ -1252,10 +1454,7 @@ export default function App() {
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {tier.tools.map(tool => (
-                      <div key={tool.name} className="rounded-xl bg-white/70 p-4">
-                        <p className="font-semibold text-gray-900">{tool.name}</p>
-                        <p className="mt-1 text-sm text-gray-600">{tool.desc}</p>
-                      </div>
+                      <ToolCard key={tool.name} tool={tool} isCustom={tier.name === 'Custom-Built Solutions'} />
                     ))}
                   </div>
                 </div>
