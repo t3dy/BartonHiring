@@ -1,6 +1,7 @@
 # Hiring Movers — Complete Action Mapping for Barton Springs Moving
 
 > **Live Site:** [https://t3dy.github.io/BartonHiring/](https://t3dy.github.io/BartonHiring/)
+> **Claude Code Lessons:** [https://t3dy.github.io/BartonHiring/lessons/](https://t3dy.github.io/BartonHiring/lessons/)
 
 A comprehensive single-page guide mapping every action in the mover hiring lifecycle — from planning and budgeting through recruiting, screening, onboarding, retention, and offboarding. Each action is paired with software solutions, advertising methods, and cost estimates tailored to a 2-3 crew Austin moving company.
 
@@ -49,6 +50,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 | Resource | Link |
 |----------|------|
+| **Claude Code Lessons** (learn to automate your business) | [t3dy.github.io/BartonHiring/lessons](https://t3dy.github.io/BartonHiring/lessons/) |
 | **Solutions Catalog** (software I can build for you) | [t3dy.github.io/BartonCatalog](https://t3dy.github.io/BartonCatalog/) |
 | **Interactive Demo** (see the tools in action) | [t3dy.github.io/BizSolutionsBarton](https://t3dy.github.io/BizSolutionsBarton/) |
 | **Solutions Catalog Repo** | [github.com/t3dy/BartonCatalog](https://github.com/t3dy/BartonCatalog) |
