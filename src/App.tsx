@@ -7,6 +7,7 @@ import {
   Layers, BriefcaseBusiness, Truck
 } from 'lucide-react';
 import { useState } from 'react';
+import QuoteWizard from './QuoteWizard';
 
 /* ─── Types ─── */
 interface SoftwareSolution {
@@ -1328,7 +1329,12 @@ function CostCalculator() {
 
 /* ─── Main App ─── */
 export default function App() {
+  const [view, setView] = useState<'hiring' | 'quote'>('hiring');
   const totalActions = stages.reduce((sum, s) => sum + s.actions.length, 0);
+
+  if (view === 'quote') {
+    return <QuoteWizard onBack={() => setView('hiring')} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1336,15 +1342,21 @@ export default function App() {
       <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <span className="text-lg font-bold text-gray-900">Hiring Guide</span>
-          <div className="flex gap-3 text-sm">
+          <div className="flex gap-3 text-sm items-center">
             <a href="#pipeline" className="hidden sm:inline text-gray-500 hover:text-brand-600">Pipeline</a>
             <a href="#actions" className="text-gray-500 hover:text-brand-600">Actions</a>
-            <a href="#software" className="text-gray-500 hover:text-brand-600">Software</a>
-            <a href="#advertising" className="text-gray-500 hover:text-brand-600">Advertising</a>
-            <a href="#calculator" className="text-gray-500 hover:text-brand-600">Calculator</a>
-            <a href={CATALOG_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-brand-600 font-medium">
+            <a href="#software" className="hidden sm:inline text-gray-500 hover:text-brand-600">Software</a>
+            <a href="#advertising" className="hidden sm:inline text-gray-500 hover:text-brand-600">Advertising</a>
+            <a href="#calculator" className="hidden sm:inline text-gray-500 hover:text-brand-600">Calculator</a>
+            <a href={CATALOG_URL} target="_blank" rel="noopener noreferrer" className="hidden sm:flex items-center gap-1 text-brand-600 font-medium">
               Catalog <ExternalLink className="h-3 w-3" />
             </a>
+            <button
+              onClick={() => setView('quote')}
+              className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700 transition-colors"
+            >
+              🚚 Quote Generator
+            </button>
           </div>
         </div>
       </nav>
