@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import QuoteWizard from './QuoteWizard';
+import AdminDashboard from './AdminDashboard';
 
 /* ─── Types ─── */
 interface SoftwareSolution {
@@ -1329,12 +1330,11 @@ function CostCalculator() {
 
 /* ─── Main App ─── */
 export default function App() {
-  const [view, setView] = useState<'hiring' | 'quote'>('hiring');
+  const [view, setView] = useState<'hiring' | 'quote' | 'admin'>('hiring');
   const totalActions = stages.reduce((sum, s) => sum + s.actions.length, 0);
 
-  if (view === 'quote') {
-    return <QuoteWizard onBack={() => setView('hiring')} />;
-  }
+  if (view === 'quote') return <QuoteWizard onBack={() => setView('hiring')} />;
+  if (view === 'admin') return <AdminDashboard onBack={() => setView('hiring')} />;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1355,7 +1355,13 @@ export default function App() {
               onClick={() => setView('quote')}
               className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700 transition-colors"
             >
-              🚚 Quote Generator
+              🚚 Quote
+            </button>
+            <button
+              onClick={() => setView('admin')}
+              className="flex items-center gap-1.5 rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-700 transition-colors"
+            >
+              📋 Inbox
             </button>
           </div>
         </div>

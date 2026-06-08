@@ -12,6 +12,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         lessons: resolve(__dirname, 'lessons/index.html'),
         quote: resolve(__dirname, 'quote/index.html'),
+        admin: resolve(__dirname, 'admin/index.html'),
       },
     },
   },

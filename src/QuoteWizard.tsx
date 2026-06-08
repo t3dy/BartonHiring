@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   ChevronLeft, ChevronRight, Check, Phone, ArrowRight, Star, MessageSquare,
 } from 'lucide-react';
+import { saveQuote } from './quoteStore';
 
 /* ─── Types ─── */
 type PropertyType = 'house' | 'apartment' | 'condo' | 'townhouse' | 'storage' | 'office' | '';
@@ -887,7 +888,21 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
               </button>
             ) : (
               <button
-                onClick={() => { if (canProceed()) setSubmitted(true); }}
+                onClick={() => {
+                  if (!canProceed()) return;
+                  saveQuote({
+                    firstName: state.firstName, lastName: state.lastName,
+                    phone: state.phone, email: state.email,
+                    propertyType: state.propertyType, size: state.size,
+                    origin: state.origin, destination: state.destination,
+                    items: state.items, specialItems: state.specialItems,
+                    services: state.services,
+                    moveDate: state.moveDate, flexibility: state.flexibility,
+                    notes: state.notes,
+                    estimateLow: estimate.low, estimateHigh: estimate.high,
+                  });
+                  setSubmitted(true);
+                }}
                 disabled={!canProceed()}
                 className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white transition-all
                   ${canProceed()
