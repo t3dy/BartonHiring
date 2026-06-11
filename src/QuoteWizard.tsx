@@ -11,6 +11,8 @@ type ParkingType = 'door' | 'short' | 'long' | '';
 type FlexibilityType = 'exact' | 'week' | 'month' | '';
 
 interface AccessInfo {
+  area: string;
+  customArea: string;
   address: string;
   zip: string;
   floor: string;
@@ -56,6 +58,28 @@ const SIZES = [
 ] as const;
 
 const FLOORS = ['Ground / 1st', '2nd', '3rd', '4th', '5th+'];
+
+/* Towns: tier controls tile size (metro > city > town). Coordinates are rough
+   map positions in miles from downtown Austin, used for the distance surcharge. */
+export const TOWNS = [
+  { id: 'downtown-austin', label: 'Downtown Austin', emoji: '🌆', tier: 'metro', x: 0, y: 0 },
+  { id: 'san-antonio', label: 'San Antonio', emoji: '🌉', tier: 'metro', x: -50, y: -75 },
+  { id: 'north-austin', label: 'North Austin', emoji: '🏙️', tier: 'city', x: 0, y: 8 },
+  { id: 'south-austin', label: 'South Austin', emoji: '🎸', tier: 'city', x: 0, y: -6 },
+  { id: 'round-rock', label: 'Round Rock', emoji: '🍩', tier: 'city', x: 2, y: 18 },
+  { id: 'san-marcos', label: 'San Marcos', emoji: '🏄', tier: 'city', x: -15, y: -28 },
+  { id: 'georgetown', label: 'Georgetown', emoji: '🏛️', tier: 'town', x: 2, y: 26 },
+  { id: 'cedar-park', label: 'Cedar Park', emoji: '🌲', tier: 'town', x: -8, y: 16 },
+  { id: 'pflugerville', label: 'Pflugerville', emoji: '🏘️', tier: 'town', x: 4, y: 14 },
+  { id: 'new-braunfels', label: 'New Braunfels', emoji: '🌊', tier: 'town', x: -25, y: -45 },
+] as const;
+
+const CUSTOM_AREA = 'custom';
+
+export function areaLabel(access: { area: string; customArea: string }): string {
+  if (access.area === CUSTOM_AREA) return access.customArea || 'Other area';
+  return TOWNS.find(t => t.id === access.area)?.label ?? '';
+}
 
 const ITEMS_BY_CATEGORY = [
   {
@@ -136,6 +160,15 @@ function estimateQuote(state: QuoteState): { low: number; high: number } {
   };
   let base = baseBySize[state.size] || 650;
 
+  // Distance surcharge between areas (~$3/mile as the crow flies)
+  const from = TOWNS.find(t => t.id === state.origin.area);
+  const to = TOWNS.find(t => t.id === state.destination.area);
+  if (from && to && from.id !== to.id) {
+    base += Math.round(Math.hypot(from.x - to.x, from.y - to.y) * 3);
+  } else if (state.origin.area === 'custom' || state.destination.area === 'custom') {
+    base += 75; // unknown area — modest placeholder, confirmed on the call
+  }
+
   const originFloorNum = FLOORS.indexOf(state.origin.floor) + 1;
   const destFloorNum = FLOORS.indexOf(state.destination.floor) + 1;
   if (!state.origin.elevator && originFloorNum > 1) base += (originFloorNum - 1) * 50;
@@ -160,7 +193,7 @@ function estimateQuote(state: QuoteState): { low: number; high: number } {
 }
 
 const defaultAccess: AccessInfo = {
-  address: '', zip: '', floor: 'Ground / 1st',
+  area: '', customArea: '', address: '', zip: '', floor: 'Ground / 1st',
   elevator: null, parkingDistance: '', narrowHallways: false, coiRequired: false,
 };
 
@@ -240,6 +273,70 @@ function RadioTile({
   );
 }
 
+/* ─── Town picker ─── */
+function TownPicker({
+  value, customValue, onSelect, onCustomChange,
+}: {
+  value: string;
+  customValue: string;
+  onSelect: (id: string) => void;
+  onCustomChange: (text: string) => void;
+}) {
+  const tierStyles: Record<string, { tile: string; emoji: string; label: string }> = {
+    metro: { tile: 'col-span-2 p-4', emoji: 'text-4xl', label: 'text-sm font-bold' },
+    city:  { tile: 'col-span-1 p-3', emoji: 'text-3xl', label: 'text-xs font-bold' },
+    town:  { tile: 'col-span-1 p-2.5', emoji: 'text-2xl', label: 'text-xs font-semibold' },
+  };
+
+  return (
+    <div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {TOWNS.map(t => {
+          const s = tierStyles[t.tier];
+          const selected = value === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => onSelect(t.id)}
+              className={`relative flex flex-col items-center justify-center rounded-2xl border-2 text-center transition-all cursor-pointer select-none ${s.tile}
+                ${selected
+                  ? 'border-teal-500 bg-teal-50 shadow-md scale-[1.03]'
+                  : 'border-gray-200 bg-white hover:border-teal-300 hover:bg-teal-50/30'}`}
+            >
+              {selected && (
+                <div className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-teal-500">
+                  <Check className="h-2.5 w-2.5 text-white" />
+                </div>
+              )}
+              <span className={`${s.emoji} mb-1`}>{t.emoji}</span>
+              <span className={`${s.label} leading-tight ${selected ? 'text-teal-700' : 'text-gray-800'}`}>{t.label}</span>
+            </button>
+          );
+        })}
+        <button
+          onClick={() => onSelect('custom')}
+          className={`col-span-2 sm:col-span-4 flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-3 text-sm font-semibold transition-all
+            ${value === 'custom'
+              ? 'border-teal-500 bg-teal-50 text-teal-700'
+              : 'border-gray-300 bg-white text-gray-500 hover:border-teal-300'}`}
+        >
+          ✏️ Somewhere else
+        </button>
+      </div>
+      {value === 'custom' && (
+        <input
+          type="text"
+          value={customValue}
+          onChange={e => onCustomChange(e.target.value)}
+          placeholder="Wimberley, Dripping Springs, Bastrop…"
+          autoFocus
+          className="mt-2 w-full rounded-xl border-2 border-teal-200 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
+        />
+      )}
+    </div>
+  );
+}
+
 /* ─── Access step ─── */
 function AccessStep({
   title, emoji, access, onChange,
@@ -253,9 +350,19 @@ function AccessStep({
         <h3 className="mt-2 text-lg font-bold text-gray-900">{title}</h3>
       </div>
 
+      <div>
+        <label className="block text-xs font-semibold text-gray-500 mb-2">Which area?</label>
+        <TownPicker
+          value={access.area}
+          customValue={access.customArea}
+          onSelect={area => onChange({ ...access, area })}
+          onCustomChange={customArea => onChange({ ...access, customArea })}
+        />
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="sm:col-span-2">
-          <label className="block text-xs font-semibold text-gray-500 mb-1">Street Address</label>
+          <label className="block text-xs font-semibold text-gray-500 mb-1">Street Address <span className="font-normal text-gray-400">(optional)</span></label>
           <input
             type="text"
             value={access.address}
@@ -442,16 +549,16 @@ function SubmittedScreen({
             </p>
           </div>
           <div className="p-5 space-y-3 text-sm">
-            {state.origin.address && (
+            {(state.origin.area || state.origin.address) && (
               <div className="flex gap-2">
                 <span className="shrink-0">📍</span>
-                <span><strong>From:</strong> {state.origin.address}{state.origin.zip ? `, ${state.origin.zip}` : ''} · Floor: {state.origin.floor}</span>
+                <span><strong>From:</strong> {[areaLabel(state.origin), state.origin.address].filter(Boolean).join(' — ')}{state.origin.zip ? `, ${state.origin.zip}` : ''} · Floor: {state.origin.floor}</span>
               </div>
             )}
-            {state.destination.address && (
+            {(state.destination.area || state.destination.address) && (
               <div className="flex gap-2">
                 <span className="shrink-0">🏁</span>
-                <span><strong>To:</strong> {state.destination.address}{state.destination.zip ? `, ${state.destination.zip}` : ''} · Floor: {state.destination.floor}</span>
+                <span><strong>To:</strong> {[areaLabel(state.destination), state.destination.address].filter(Boolean).join(' — ')}{state.destination.zip ? `, ${state.destination.zip}` : ''} · Floor: {state.destination.floor}</span>
               </div>
             )}
             {state.moveDate && (
@@ -545,8 +652,8 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
   const canProceed = () => {
     if (step === 1) return !!state.propertyType;
     if (step === 2) return !!state.size;
-    if (step === 3) return !!state.origin.parkingDistance;
-    if (step === 4) return !!state.destination.parkingDistance;
+    if (step === 3) return !!state.origin.area && !!state.origin.parkingDistance;
+    if (step === 4) return !!state.destination.area && !!state.destination.parkingDistance;
     if (step === 7) return !!(state.firstName && state.phone);
     return true;
   };

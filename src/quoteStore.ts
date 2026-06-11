@@ -1,5 +1,7 @@
 /* ─── Types ─── */
 export interface StoredAccessInfo {
+  area?: string;
+  customArea?: string;
   address: string;
   zip: string;
   floor: string;
@@ -33,6 +35,19 @@ export interface QuoteRecord {
 }
 
 /* ─── Lookup tables for display ─── */
+export const AREA_LABELS: Record<string, string> = {
+  'downtown-austin': '🌆 Downtown Austin', 'san-antonio': '🌉 San Antonio',
+  'north-austin': '🏙️ North Austin', 'south-austin': '🎸 South Austin',
+  'round-rock': '🍩 Round Rock', 'san-marcos': '🏄 San Marcos',
+  'georgetown': '🏛️ Georgetown', 'cedar-park': '🌲 Cedar Park',
+  'pflugerville': '🏘️ Pflugerville', 'new-braunfels': '🌊 New Braunfels',
+};
+
+export function areaDisplay(info: StoredAccessInfo): string {
+  if (info.area === 'custom') return info.customArea ? `✏️ ${info.customArea}` : '✏️ Other area';
+  return (info.area && AREA_LABELS[info.area]) || '';
+}
+
 export const PROPERTY_LABELS: Record<string, string> = {
   house: '🏠 House', apartment: '🏢 Apartment', condo: '🏙️ Condo',
   townhouse: '🏘️ Townhouse', storage: '📦 Storage Unit', office: '🏛️ Office/Commercial',
@@ -76,8 +91,8 @@ const SEED_QUOTES: QuoteRecord[] = [
     internalNotes: '',
     firstName: 'Sarah', lastName: 'Martinez', phone: '(512) 867-5309', email: 'sarah.m@gmail.com',
     propertyType: 'apartment', size: '2br',
-    origin: { address: '1204 E 6th St', zip: '78702', floor: '3rd', elevator: true, parkingDistance: 'short', narrowHallways: false, coiRequired: true },
-    destination: { address: '2803 Manchaca Rd', zip: '78704', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
+    origin: { area: 'downtown-austin', customArea: '', address: '1204 E 6th St', zip: '78702', floor: '3rd', elevator: true, parkingDistance: 'short', narrowHallways: false, coiRequired: true },
+    destination: { area: 'south-austin', customArea: '', address: '2803 Manchaca Rd', zip: '78704', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
     items: ['sofa', 'bed-queen', 'dresser', 'dining-table', 'fridge', 'washer', 'dryer', 'boxes-many'],
     specialItems: ['mirrors', 'art'],
     services: ['packing', 'insurance'],
@@ -92,8 +107,8 @@ const SEED_QUOTES: QuoteRecord[] = [
     internalNotes: 'Called Tuesday 2pm. He answered — confirmed date, going to email him a formal quote today. Piano is upright, not baby grand.',
     firstName: 'James', lastName: 'Chen', phone: '(512) 555-0142', email: 'jchen@outlook.com',
     propertyType: 'house', size: '3br',
-    origin: { address: '4512 Bull Creek Rd', zip: '78731', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
-    destination: { address: '812 Sagebrush Trail', zip: '78681', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
+    origin: { area: 'north-austin', customArea: '', address: '4512 Bull Creek Rd', zip: '78731', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
+    destination: { area: 'round-rock', customArea: '', address: '812 Sagebrush Trail', zip: '78681', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
     items: ['sectional', 'bed-king', 'bed-queen', 'dresser', 'piano', 'pool-table', 'washer', 'dryer', 'fridge', 'boxes-many'],
     specialItems: ['antiques', 'art'],
     services: ['disassembly', 'insurance'],
@@ -108,8 +123,8 @@ const SEED_QUOTES: QuoteRecord[] = [
     internalNotes: 'Scheduled Saturday June 8, 8am. 2-person crew (Marcus + Dre). Building requires COI — emailed certificate Thursday. She confirmed receipt.',
     firstName: 'Priya', lastName: 'Nair', phone: '(512) 444-7821', email: 'priya.nair@utexas.edu',
     propertyType: 'apartment', size: 'studio',
-    origin: { address: '111 Sandra Muraida Way', zip: '78703', floor: '5th+', elevator: true, parkingDistance: 'long', narrowHallways: false, coiRequired: true },
-    destination: { address: '2222 Rio Grande St', zip: '78705', floor: '2nd', elevator: false, parkingDistance: 'short', narrowHallways: true, coiRequired: false },
+    origin: { area: 'downtown-austin', customArea: '', address: '111 Sandra Muraida Way', zip: '78703', floor: '5th+', elevator: true, parkingDistance: 'long', narrowHallways: false, coiRequired: true },
+    destination: { area: 'downtown-austin', customArea: '', address: '2222 Rio Grande St', zip: '78705', floor: '2nd', elevator: false, parkingDistance: 'short', narrowHallways: true, coiRequired: false },
     items: ['sofa', 'bed-queen', 'dresser', 'bookshelf', 'boxes-some'],
     specialItems: [],
     services: [],
@@ -124,8 +139,8 @@ const SEED_QUOTES: QuoteRecord[] = [
     internalNotes: 'Move done May 30. 3-person crew, 6 hours. Customer was thrilled — left 5-star Google review. Tipped the crew $80 total.',
     firstName: 'Mike', lastName: 'Sullivan', phone: '(512) 333-9100', email: 'msullivan@email.com',
     propertyType: 'house', size: '4br',
-    origin: { address: '9201 Brodie Ln', zip: '78748', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
-    destination: { address: '1400 Spicewood Springs Rd', zip: '78759', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
+    origin: { area: 'south-austin', customArea: '', address: '9201 Brodie Ln', zip: '78748', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
+    destination: { area: 'north-austin', customArea: '', address: '1400 Spicewood Springs Rd', zip: '78759', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
     items: ['sofa', 'sectional', 'bed-king', 'bed-queen', 'bed-queen', 'dresser', 'wardrobe', 'dining-table', 'fridge', 'washer', 'dryer', 'stove', 'dishwasher', 'gym', 'boxes-many'],
     specialItems: ['wine', 'art'],
     services: ['packing', 'disassembly', 'insurance'],

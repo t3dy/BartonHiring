@@ -5,7 +5,7 @@ import {
   Bell, AlertCircle, Zap, ExternalLink,
 } from 'lucide-react';
 import {
-  getQuotes, updateQuote, deleteQuote,
+  getQuotes, updateQuote, deleteQuote, areaDisplay,
   type QuoteRecord, PROPERTY_LABELS, SIZE_LABELS,
   ITEM_LABELS, SPECIAL_LABELS, SERVICE_LABELS,
 } from './quoteStore';
@@ -71,6 +71,11 @@ function QuoteCard({ quote, onClick }: { quote: QuoteRecord; onClick: () => void
         </div>
       </div>
 
+      {(areaDisplay(quote.origin) || areaDisplay(quote.destination)) && (
+        <p className="text-sm font-semibold text-gray-700 mb-1.5">
+          {areaDisplay(quote.origin) || '?'} <span className="text-gray-400">→</span> {areaDisplay(quote.destination) || '?'}
+        </p>
+      )}
       <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 mb-3">
         <span>{prop}</span>
         {size && <><span>·</span><span>{size}</span></>}
@@ -112,8 +117,11 @@ function AccessDetail({ label, info }: { label: string; info: QuoteRecord['origi
   return (
     <div>
       <p className="text-xs font-semibold text-gray-400 uppercase mb-1">{label}</p>
-      <p className="text-sm font-medium text-gray-900">
-        {info.address || 'Address not provided'}{info.zip ? `, ${info.zip}` : ''}
+      {areaDisplay(info) && (
+        <p className="text-sm font-bold text-gray-900">{areaDisplay(info)}</p>
+      )}
+      <p className="text-sm font-medium text-gray-700">
+        {info.address || 'Street address not provided'}{info.zip ? `, ${info.zip}` : ''}
       </p>
       <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500">
         <span>Floor: {info.floor}</span>
