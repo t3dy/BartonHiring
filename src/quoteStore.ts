@@ -22,6 +22,10 @@ export interface QuoteRecord {
   email: string;
   propertyType: string;
   size: string;
+  stories?: string;
+  boxes?: string;
+  crew?: number;
+  promoCode?: string;
   origin: StoredAccessInfo;
   destination: StoredAccessInfo;
   items: string[];
@@ -76,6 +80,11 @@ export const SPECIAL_LABELS: Record<string, string> = {
   marble: 'Marble/Stone Tops', sculptures: 'Sculptures',
 };
 
+export const BOX_LABELS: Record<string, string> = {
+  none: 'No boxes', few: '1–10 boxes', small: '10–15 boxes',
+  medium: '15–30 boxes', large: '30–60 boxes', huge: '60–100 boxes',
+};
+
 export const SERVICE_LABELS: Record<string, string> = {
   packing: 'Full Packing', 'partial-pack': 'Partial Packing', unpacking: 'Unpacking',
   disassembly: 'Furniture Assembly', storage: 'Short-Term Storage',
@@ -90,7 +99,7 @@ const SEED_QUOTES: QuoteRecord[] = [
     status: 'new',
     internalNotes: '',
     firstName: 'Sarah', lastName: 'Martinez', phone: '(512) 867-5309', email: 'sarah.m@gmail.com',
-    propertyType: 'apartment', size: '2br',
+    propertyType: 'apartment', size: '2br', boxes: 'medium', crew: 3, promoCode: 'ONTHELAKE5',
     origin: { area: 'downtown-austin', customArea: '', address: '1204 E 6th St', zip: '78702', floor: '3rd', elevator: true, parkingDistance: 'short', narrowHallways: false, coiRequired: true },
     destination: { area: 'south-austin', customArea: '', address: '2803 Manchaca Rd', zip: '78704', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
     items: ['sofa', 'bed-queen', 'dresser', 'dining-table', 'fridge', 'washer', 'dryer', 'boxes-many'],
@@ -106,7 +115,7 @@ const SEED_QUOTES: QuoteRecord[] = [
     status: 'contacted',
     internalNotes: 'Called Tuesday 2pm. He answered — confirmed date, going to email him a formal quote today. Piano is upright, not baby grand.',
     firstName: 'James', lastName: 'Chen', phone: '(512) 555-0142', email: 'jchen@outlook.com',
-    propertyType: 'house', size: '3br',
+    propertyType: 'house', size: '3br', stories: '2', boxes: 'large', crew: 4,
     origin: { area: 'north-austin', customArea: '', address: '4512 Bull Creek Rd', zip: '78731', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
     destination: { area: 'round-rock', customArea: '', address: '812 Sagebrush Trail', zip: '78681', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
     items: ['sectional', 'bed-king', 'bed-queen', 'dresser', 'piano', 'pool-table', 'washer', 'dryer', 'fridge', 'boxes-many'],

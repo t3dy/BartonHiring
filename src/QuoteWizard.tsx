@@ -25,11 +25,15 @@ interface AccessInfo {
 interface QuoteState {
   propertyType: PropertyType;
   size: SizeType;
+  stories: string;
   origin: AccessInfo;
   destination: AccessInfo;
   items: string[];
   specialItems: string[];
   services: string[];
+  boxes: string;
+  crew: number;
+  promoCode: string;
   moveDate: string;
   flexibility: FlexibilityType;
   firstName: string;
@@ -49,13 +53,46 @@ const PROPERTY_TYPES = [
   { id: 'office', label: 'Office / Commercial', emoji: '🏛️', desc: 'Business or commercial space' },
 ] as const;
 
+/* Room count doubles as the square-footage estimate — customers know their
+   rooms even when they don't know their sq ft. */
 const SIZES = [
-  { id: 'studio', label: 'Studio', emoji: '🛏️', desc: 'Open plan, 1 room' },
-  { id: '1br', label: '1 Bedroom', emoji: '🛏️', desc: '2–3 rooms' },
-  { id: '2br', label: '2 Bedrooms', emoji: '🛏️🛏️', desc: '4–5 rooms' },
-  { id: '3br', label: '3 Bedrooms', emoji: '🛏️🛏️🛏️', desc: '6–7 rooms' },
-  { id: '4br', label: '4+ Bedrooms', emoji: '🏠✨', desc: '8+ rooms' },
+  { id: 'studio', label: 'Studio', emoji: '🛏️', desc: 'Open plan, 1 room', sqft: '≈ 500 sq ft' },
+  { id: '1br', label: '1 Bedroom', emoji: '🛏️', desc: '2–3 rooms', sqft: '≈ 750 sq ft' },
+  { id: '2br', label: '2 Bedrooms', emoji: '🛏️🛏️', desc: '4–5 rooms', sqft: '≈ 1,100 sq ft' },
+  { id: '3br', label: '3 Bedrooms', emoji: '🛏️🛏️🛏️', desc: '6–7 rooms', sqft: '≈ 1,600 sq ft' },
+  { id: '4br', label: '4+ Bedrooms', emoji: '🏠✨', desc: '8+ rooms', sqft: '≈ 2,500+ sq ft' },
 ] as const;
+
+const STORY_OPTIONS = [
+  { id: '1', label: '🏡 One story' },
+  { id: '2', label: '🏠 Two stories' },
+  { id: '3+', label: '🏯 Three or more' },
+];
+
+const BOX_STACKS = [
+  { id: 'none', emoji: '🙅', label: 'No boxes', desc: 'Furniture only', cost: 0 },
+  { id: 'few', emoji: '📦', label: 'Just a few', desc: '1–10 boxes', cost: 30 },
+  { id: 'small', emoji: '📦📦', label: 'Small stack', desc: '10–15 boxes', cost: 60 },
+  { id: 'medium', emoji: '📦📦📦', label: 'Medium stack', desc: '15–30 boxes', cost: 110 },
+  { id: 'large', emoji: '📦📦📦📦', label: 'Big stack', desc: '30–60 boxes', cost: 200 },
+  { id: 'huge', emoji: '📦🏔️', label: 'Box mountain', desc: '60–100 boxes', cost: 320 },
+];
+
+/* Partner apartment complexes — codes plug a discount into the estimate */
+const PROMOS: Record<string, { label: string; kind: 'pct' | 'flat'; value: number }> = {
+  ONTHELAKE5: { label: 'Windsor on the Lake — 5% off', kind: 'pct', value: 5 },
+  BARTON50: { label: 'Partner building — $50 off', kind: 'flat', value: 50 },
+};
+
+/* Crew size the job actually needs — Matthew's "salamanders" */
+function recommendedCrew(state: QuoteState): number {
+  const bySize: Record<string, number> = { studio: 2, '1br': 2, '2br': 3, '3br': 3, '4br': 4 };
+  let crew = bySize[state.size] ?? 2;
+  if (state.items.includes('piano') || state.items.includes('pool-table')) crew += 1;
+  const hardStairs = (a: AccessInfo) => a.elevator === false && FLOORS.indexOf(a.floor) >= 2;
+  if (hardStairs(state.origin) || hardStairs(state.destination) || state.stories === '3+') crew += 1;
+  return Math.min(5, Math.max(2, crew));
+}
 
 const FLOORS = ['Ground / 1st', '2nd', '3rd', '4th', '5th+'];
 
@@ -189,7 +226,24 @@ function estimateQuote(state: QuoteState): { low: number; high: number } {
 
   if (state.specialItems.length > 0) base += state.specialItems.length * 30;
 
-  return { low: Math.round(base * 0.9), high: Math.round(base * 1.2) };
+  base += BOX_STACKS.find(b => b.id === state.boxes)?.cost ?? 0;
+  if (state.stories === '2') base += 50;
+  if (state.stories === '3+') base += 100;
+
+  // Extra salamanders beyond the recommended crew cost more (but finish faster)
+  const rec = recommendedCrew(state);
+  if (state.crew > rec) base += (state.crew - rec) * 80;
+
+  let low = base * 0.9;
+  let high = base * 1.2;
+
+  const promo = PROMOS[state.promoCode.trim().toUpperCase()];
+  if (promo) {
+    if (promo.kind === 'pct') { low *= 1 - promo.value / 100; high *= 1 - promo.value / 100; }
+    else { low = Math.max(0, low - promo.value); high = Math.max(0, high - promo.value); }
+  }
+
+  return { low: Math.round(low), high: Math.round(high) };
 }
 
 const defaultAccess: AccessInfo = {
@@ -198,9 +252,10 @@ const defaultAccess: AccessInfo = {
 };
 
 const defaultState: QuoteState = {
-  propertyType: '', size: '',
+  propertyType: '', size: '', stories: '',
   origin: { ...defaultAccess }, destination: { ...defaultAccess },
   items: [], specialItems: [], services: [],
+  boxes: '', crew: 0, promoCode: '',
   moveDate: '', flexibility: '',
   firstName: '', lastName: '', phone: '', email: '', notes: '',
 };
@@ -270,6 +325,90 @@ function RadioTile({
     >
       {label}
     </button>
+  );
+}
+
+/* ─── Voice item entry ─── */
+const VOICE_KEYWORDS: [RegExp, string][] = [
+  [/pool table/, 'pool-table'],
+  [/coffee table/, 'coffee-table'],
+  [/dining table|kitchen table/, 'dining-table'],
+  [/king (size )?bed/, 'bed-king'],
+  [/bed/, 'bed-queen'],
+  [/sectional/, 'sectional'],
+  [/sofa|couch|loveseat/, 'sofa'],
+  [/dresser|chest of drawers|drawers/, 'dresser'],
+  [/desk/, 'desk'],
+  [/bookshelf|bookcase|book shelf/, 'bookshelf'],
+  [/wardrobe|armoire/, 'wardrobe'],
+  [/fridge|refrigerator/, 'fridge'],
+  [/washer|washing machine/, 'washer'],
+  [/dryer/, 'dryer'],
+  [/stove|oven|range/, 'stove'],
+  [/dishwasher/, 'dishwasher'],
+  [/tv|television/, 'tv-large'],
+  [/piano/, 'piano'],
+  [/safe|gun cabinet/, 'safe'],
+  [/grill|patio/, 'patio'],
+  [/gym|weights|treadmill|peloton/, 'gym'],
+  [/bike|bicycle/, 'bike'],
+];
+
+function matchSpokenItems(text: string): string[] {
+  const found: string[] = [];
+  for (const [re, id] of VOICE_KEYWORDS) {
+    if (re.test(text) && !found.includes(id)) found.push(id);
+  }
+  return found;
+}
+
+function VoiceItemsButton({ onMatches }: { onMatches: (ids: string[]) => void }) {
+  const [listening, setListening] = useState(false);
+  const [heard, setHeard] = useState('');
+  const [matchCount, setMatchCount] = useState<number | null>(null);
+
+  const SR = (window as unknown as Record<string, unknown>).webkitSpeechRecognition
+    || (window as unknown as Record<string, unknown>).SpeechRecognition;
+  if (!SR) return null;
+
+  const start = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rec = new (SR as any)();
+    rec.lang = 'en-US';
+    rec.interimResults = false;
+    rec.continuous = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rec.onresult = (e: any) => {
+      const text: string = e.results[0][0].transcript.toLowerCase();
+      const ids = matchSpokenItems(text);
+      setHeard(text);
+      setMatchCount(ids.length);
+      onMatches(ids);
+    };
+    rec.onerror = () => setListening(false);
+    rec.onend = () => setListening(false);
+    setListening(true);
+    rec.start();
+  };
+
+  return (
+    <div className="mb-4 rounded-2xl border-2 border-dashed border-teal-200 bg-teal-50/40 p-3 text-center">
+      <button
+        onClick={start}
+        disabled={listening}
+        className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all
+          ${listening
+            ? 'bg-rose-100 text-rose-600 animate-pulse'
+            : 'bg-teal-600 text-white hover:bg-teal-700'}`}
+      >
+        {listening ? '🎙️ Listening… say your items!' : '🎤 Or just say what you have'}
+      </button>
+      {heard && (
+        <p className="mt-2 text-xs text-gray-500">
+          Heard: “{heard}” — {matchCount} item{matchCount !== 1 ? 's' : ''} added below ✨
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -519,6 +658,10 @@ function WelcomeStep({ onStart }: { onStart: () => void }) {
 }
 
 /* ─── Submitted / confirmation screen ─── */
+const ITEM_EMOJI: Record<string, string> = Object.fromEntries(
+  ITEMS_BY_CATEGORY.flatMap(c => c.items.map(i => [i.id, i.emoji])),
+);
+
 function SubmittedScreen({
   state, estimate, onReset,
 }: {
@@ -526,6 +669,10 @@ function SubmittedScreen({
 }) {
   const propLabel = PROPERTY_TYPES.find(p => p.id === state.propertyType)?.label ?? '';
   const sizeLabel = SIZES.find(s => s.id === state.size)?.label ?? '';
+  const propEmoji = PROPERTY_TYPES.find(p => p.id === state.propertyType)?.emoji ?? '🏠';
+  const boxEmoji = BOX_STACKS.find(b => b.id === state.boxes)?.emoji ?? '';
+  const moveEmojis = state.items.map(id => ITEM_EMOJI[id]).filter(Boolean);
+  const promo = PROMOS[state.promoCode.trim().toUpperCase()];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-brand-50 flex items-center justify-center px-4 py-8">
@@ -540,6 +687,21 @@ function SubmittedScreen({
             {state.phone ? <> at <strong>{state.phone}</strong></> : ''} to confirm your quote.
           </p>
         </div>
+
+        {/* Cartoon move strip — your stuff rolling to your new place */}
+        {(moveEmojis.length > 0 || state.crew > 0) && (
+          <div className="rounded-2xl border border-teal-100 bg-white shadow-sm p-4 mb-4 text-center overflow-hidden">
+            <p className="text-xs font-bold uppercase text-gray-400 mb-2">Your move at a glance</p>
+            <p className="text-2xl leading-relaxed break-words">
+              🚚💨 {moveEmojis.join(' ')} {boxEmoji && boxEmoji !== '🙅' ? boxEmoji : ''} ➡️ {propEmoji}
+            </p>
+            {state.crew > 0 && (
+              <p className="mt-1 text-sm text-gray-500">
+                Carried by your {state.crew} salamanders: {'🦎'.repeat(state.crew)}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="rounded-2xl border border-teal-100 bg-white shadow-md overflow-hidden mb-6">
           <div className="bg-gradient-to-r from-teal-600 to-brand-600 px-5 py-4 text-white">
@@ -589,6 +751,9 @@ function SubmittedScreen({
           <div className="bg-teal-50 border-t border-teal-100 px-5 py-4">
             <p className="text-xs text-teal-600 font-bold uppercase">Estimated Range</p>
             <p className="text-2xl font-bold text-teal-700">${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}</p>
+            {promo && (
+              <p className="text-xs font-bold text-emerald-600 mt-0.5">🎟️ {promo.label} included</p>
+            )}
             <p className="text-xs text-teal-600 mt-1">We'll nail down the exact number on your call.</p>
           </div>
         </div>
@@ -632,15 +797,18 @@ const STEP_LABELS = [
   'Moving From',
   'Moving To',
   'Your Items',
+  'Boxes & Crew',
   'Extras & Services',
   'Dates & Contact',
 ];
+const TOTAL_STEPS = STEP_LABELS.length;
 
 /* ─── Main export ─── */
 export default function QuoteWizard({ onBack, standalone }: { onBack?: () => void; standalone?: boolean }) {
   const [step, setStep] = useState(0);
   const [state, setState] = useState<QuoteState>({ ...defaultState });
   const [submitted, setSubmitted] = useState(false);
+  const [promoOpen, setPromoOpen] = useState(false);
 
   const toggleItem = (id: string, field: 'items' | 'specialItems' | 'services') => {
     setState(prev => {
@@ -649,12 +817,15 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
     });
   };
 
+  const needsStories = state.propertyType === 'house' || state.propertyType === 'townhouse';
+
   const canProceed = () => {
     if (step === 1) return !!state.propertyType;
-    if (step === 2) return !!state.size;
+    if (step === 2) return !!state.size && (!needsStories || !!state.stories);
     if (step === 3) return !!state.origin.area && !!state.origin.parkingDistance;
     if (step === 4) return !!state.destination.area && !!state.destination.parkingDistance;
-    if (step === 7) return !!(state.firstName && state.phone);
+    if (step === 6) return !!state.boxes && state.crew > 0;
+    if (step === 8) return !!(state.firstName && state.phone);
     return true;
   };
 
@@ -694,16 +865,16 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
           </a>
         </div>
 
-        {step >= 1 && step <= 7 && (
+        {step >= 1 && step <= TOTAL_STEPS && (
           <div className="mx-auto max-w-2xl px-4 pb-3">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-gray-400 font-medium">Step {step} of 7 — {STEP_LABELS[step - 1]}</span>
-              <span className="text-xs text-teal-600 font-semibold">{Math.round((step / 7) * 100)}%</span>
+              <span className="text-xs text-gray-400 font-medium">Step {step} of {TOTAL_STEPS} — {STEP_LABELS[step - 1]}</span>
+              <span className="text-xs text-teal-600 font-semibold">{Math.round((step / TOTAL_STEPS) * 100)}%</span>
             </div>
             <div className="h-1.5 w-full rounded-full bg-gray-100">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-teal-500 to-brand-500 transition-all duration-500"
-                style={{ width: `${(step / 7) * 100}%` }}
+                style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
               />
             </div>
           </div>
@@ -741,20 +912,39 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
         {step === 2 && (
           <StepWrapper
             title="How big is your current home?"
-            subtitle="Give us your best estimate — we can adjust on the call."
+            subtitle="Count your rooms — we'll figure out the square footage from that."
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {SIZES.map(s => (
-                <SelectTile
-                  key={s.id}
-                  emoji={s.emoji}
-                  label={s.label}
-                  desc={s.desc}
-                  selected={state.size === s.id}
-                  onClick={() => setState(prev => ({ ...prev, size: s.id as SizeType }))}
-                />
-              ))}
+              {SIZES.map(s => {
+                const mcMansion = s.id === '4br' && needsStories;
+                return (
+                  <SelectTile
+                    key={s.id}
+                    emoji={mcMansion ? '🏰' : s.emoji}
+                    label={mcMansion ? 'McMansion (4+ BR)' : s.label}
+                    desc={`${s.desc} · ${s.sqft}`}
+                    selected={state.size === s.id}
+                    onClick={() => setState(prev => ({ ...prev, size: s.id as SizeType }))}
+                  />
+                );
+              })}
             </div>
+
+            {needsStories && state.size && (
+              <div className="mt-6">
+                <label className="block text-xs font-semibold text-gray-500 mb-2">How many stories?</label>
+                <div className="flex flex-wrap gap-2">
+                  {STORY_OPTIONS.map(opt => (
+                    <RadioTile
+                      key={opt.id}
+                      label={opt.label}
+                      selected={state.stories === opt.id}
+                      onClick={() => setState(prev => ({ ...prev, stories: opt.id }))}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </StepWrapper>
         )}
 
@@ -794,6 +984,12 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
             title="What are you moving?"
             subtitle="Tap everything that applies — don't forget the stuff hiding in closets!"
           >
+            <VoiceItemsButton
+              onMatches={ids => setState(prev => ({
+                ...prev,
+                items: [...prev.items, ...ids.filter(id => !prev.items.includes(id))],
+              }))}
+            />
             {ITEMS_BY_CATEGORY.map(cat => (
               <div key={cat.category} className="mb-5">
                 <h4 className="text-xs font-bold uppercase text-gray-400 mb-2 tracking-wide">{cat.category}</h4>
@@ -818,8 +1014,75 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
           </StepWrapper>
         )}
 
-        {/* ── Step 6: Fragile items + services ── */}
+        {/* ── Step 6: Boxes & Crew ── */}
         {step === 6 && (
+          <StepWrapper
+            title="Boxes and salamanders"
+            subtitle="Roughly how many boxes, and how many movers do you want on the job?"
+          >
+            <div className="mb-7">
+              <h4 className="text-xs font-bold uppercase text-gray-400 mb-2 tracking-wide">How many boxes (roughly)?</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {BOX_STACKS.map(b => (
+                  <SelectTile
+                    key={b.id}
+                    emoji={b.emoji}
+                    label={b.label}
+                    desc={b.desc}
+                    selected={state.boxes === b.id}
+                    onClick={() => setState(prev => ({ ...prev, boxes: b.id }))}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-bold uppercase text-gray-400 mb-1 tracking-wide">Pick your salamanders 🦎</h4>
+              <p className="text-sm text-gray-500 mb-3">
+                Our movers. For your move we recommend <strong className="text-teal-700">{recommendedCrew(state)}</strong>.
+              </p>
+              <div className="grid grid-cols-4 gap-2">
+                {[2, 3, 4, 5].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setState(prev => ({ ...prev, crew: n }))}
+                    className={`flex flex-col items-center justify-center rounded-2xl border-2 p-3 transition-all
+                      ${state.crew === n
+                        ? 'border-teal-500 bg-teal-50 shadow-md scale-[1.03]'
+                        : 'border-gray-200 bg-white hover:border-teal-300'}`}
+                  >
+                    <span className="text-lg leading-tight">{'🦎'.repeat(n > 3 ? 3 : n)}{n > 3 ? <span className="block">{'🦎'.repeat(n - 3)}</span> : null}</span>
+                    <span className={`mt-1 text-sm font-bold ${state.crew === n ? 'text-teal-700' : 'text-gray-800'}`}>{n}</span>
+                  </button>
+                ))}
+              </div>
+
+              {state.crew > 0 && state.crew < recommendedCrew(state) && (
+                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-sm text-amber-800">
+                    🦎💦 Whoa — with only {state.crew} salamander{state.crew > 1 ? 's' : ''}, this move could take a <em>really</em> long time
+                    {state.items.includes('piano') ? ' (and someone has to carry that piano!)' : ''}.
+                    We recommend <strong>{recommendedCrew(state)}</strong> for a move like yours.
+                  </p>
+                  <button
+                    onClick={() => setState(prev => ({ ...prev, crew: recommendedCrew(prev) }))}
+                    className="mt-2 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700"
+                  >
+                    Use {recommendedCrew(state)} salamanders
+                  </button>
+                </div>
+              )}
+              {state.crew > recommendedCrew(state) && (
+                <p className="mt-3 text-xs text-teal-600 font-medium">
+                  ⚡ Extra hands finish faster — adds a little to the estimate, saves you hours on move day.
+                </p>
+              )}
+            </div>
+          </StepWrapper>
+        )}
+
+        {/* ── Step 7: Fragile items + services ── */}
+        {step === 7 && (
           <StepWrapper
             title="Anything fragile or special? Any add-ons?"
             subtitle="We take extra care with the stuff that matters most."
@@ -869,8 +1132,8 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
           </StepWrapper>
         )}
 
-        {/* ── Step 7: Date + contact ── */}
-        {step === 7 && (
+        {/* ── Step 8: Date + contact ── */}
+        {step === 8 && (
           <StepWrapper
             title="Almost done — when and who?"
             subtitle="We'll personally reach out to confirm your quote and answer any questions."
@@ -959,6 +1222,36 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                 />
               </div>
 
+              <div>
+                {!promoOpen && !state.promoCode ? (
+                  <button
+                    onClick={() => setPromoOpen(true)}
+                    className="text-xs font-semibold text-teal-600 underline"
+                  >
+                    🎟️ Live in a partner building? Enter your code
+                  </button>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Partner Code</label>
+                    <input
+                      type="text"
+                      value={state.promoCode}
+                      onChange={e => setState(prev => ({ ...prev, promoCode: e.target.value.toUpperCase() }))}
+                      placeholder="ONTHELAKE5"
+                      className="w-full sm:w-64 rounded-xl border border-gray-300 px-4 py-2.5 text-sm uppercase tracking-wide focus:border-teal-500 focus:outline-none"
+                    />
+                    {PROMOS[state.promoCode.trim().toUpperCase()] && (
+                      <p className="mt-1.5 text-xs font-bold text-emerald-600">
+                        ✓ {PROMOS[state.promoCode.trim().toUpperCase()].label} — applied to your estimate!
+                      </p>
+                    )}
+                    {state.promoCode.trim().length >= 4 && !PROMOS[state.promoCode.trim().toUpperCase()] && (
+                      <p className="mt-1.5 text-xs text-gray-400">Code not recognized — we'll double-check it on your call.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {state.size && (
                 <div className="rounded-2xl bg-gradient-to-br from-teal-50 to-brand-50 border border-teal-100 p-4">
                   <p className="text-xs font-bold uppercase text-teal-600 mb-1">Your Estimated Range</p>
@@ -973,7 +1266,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
         )}
 
         {/* Navigation buttons */}
-        {step >= 1 && step <= 7 && (
+        {step >= 1 && step <= TOTAL_STEPS && (
           <div className="flex items-center justify-between mt-6">
             <button
               onClick={() => setStep(s => s - 1)}
@@ -982,7 +1275,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
               <ChevronLeft className="h-4 w-4" /> Back
             </button>
 
-            {step < 7 ? (
+            {step < TOTAL_STEPS ? (
               <button
                 onClick={() => { if (canProceed()) setStep(s => s + 1); }}
                 disabled={!canProceed()}
@@ -1001,9 +1294,11 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                     firstName: state.firstName, lastName: state.lastName,
                     phone: state.phone, email: state.email,
                     propertyType: state.propertyType, size: state.size,
+                    stories: state.stories,
                     origin: state.origin, destination: state.destination,
                     items: state.items, specialItems: state.specialItems,
                     services: state.services,
+                    boxes: state.boxes, crew: state.crew, promoCode: state.promoCode,
                     moveDate: state.moveDate, flexibility: state.flexibility,
                     notes: state.notes,
                     estimateLow: estimate.low, estimateHigh: estimate.high,
@@ -1022,8 +1317,8 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
           </div>
         )}
 
-        {/* Steps 1-6: skip-to-call nudge */}
-        {step >= 1 && step <= 6 && (
+        {/* Pre-final steps: skip-to-call nudge */}
+        {step >= 1 && step < TOTAL_STEPS && (
           <p className="mt-4 text-center text-xs text-gray-400">
             Prefer to just talk?{' '}
             <a href="tel:5125555555" className="text-teal-600 font-semibold underline">

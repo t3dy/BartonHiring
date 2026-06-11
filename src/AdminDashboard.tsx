@@ -7,7 +7,7 @@ import {
 import {
   getQuotes, updateQuote, deleteQuote, areaDisplay,
   type QuoteRecord, PROPERTY_LABELS, SIZE_LABELS,
-  ITEM_LABELS, SPECIAL_LABELS, SERVICE_LABELS,
+  ITEM_LABELS, SPECIAL_LABELS, SERVICE_LABELS, BOX_LABELS,
 } from './quoteStore';
 
 /* ─── Helpers ─── */
@@ -292,6 +292,26 @@ function QuoteDetail({
             <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs text-gray-600 font-medium">
               {SIZE_LABELS[quote.size] ?? quote.size}
             </span>
+            {quote.stories && (
+              <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs text-gray-600 font-medium">
+                {quote.stories} {quote.stories === '1' ? 'story' : 'stories'}
+              </span>
+            )}
+            {quote.boxes && BOX_LABELS[quote.boxes] && (
+              <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs text-gray-600 font-medium">
+                📦 {BOX_LABELS[quote.boxes]}
+              </span>
+            )}
+            {!!quote.crew && (
+              <span className="rounded-lg bg-teal-50 border border-teal-200 px-2.5 py-1 text-xs text-teal-700 font-medium">
+                🦎 Crew of {quote.crew}
+              </span>
+            )}
+            {quote.promoCode && (
+              <span className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs text-emerald-700 font-medium">
+                🎟️ {quote.promoCode}
+              </span>
+            )}
           </div>
         </Section>
 
