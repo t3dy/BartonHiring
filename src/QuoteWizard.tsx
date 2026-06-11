@@ -632,12 +632,20 @@ function WelcomeStep({ onStart }: { onStart: () => void }) {
         <Star className="h-4 w-4 fill-teal-500" />
         <span>100+ 5-star reviews · Austin's boutique moving team</span>
       </div>
-      <button
-        onClick={onStart}
-        className="inline-flex items-center gap-2 rounded-2xl bg-teal-600 px-10 py-4 text-lg font-bold text-white shadow-lg hover:bg-teal-700 hover:scale-105 transition-all"
-      >
-        Build My Quote <ArrowRight className="h-5 w-5" />
-      </button>
+      <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+        <button
+          onClick={onStart}
+          className="inline-flex items-center gap-2 rounded-2xl bg-teal-600 px-10 py-4 text-lg font-bold text-white shadow-lg hover:bg-teal-700 hover:scale-105 transition-all"
+        >
+          Build My Quote <ArrowRight className="h-5 w-5" />
+        </button>
+        <a
+          href="tel:5125555555"
+          className="inline-flex items-center gap-2 rounded-2xl border-2 border-teal-200 bg-white px-8 py-4 text-lg font-bold text-teal-700 hover:border-teal-400 hover:bg-teal-50 transition-all"
+        >
+          <Phone className="h-5 w-5" /> …or just give us a call
+        </a>
+      </div>
       <p className="mt-4 text-xs text-gray-400">Takes about 3 minutes · No spam · A real person calls you</p>
       <div className="mt-8 grid grid-cols-3 gap-4 max-w-xs mx-auto text-center">
         <div>
