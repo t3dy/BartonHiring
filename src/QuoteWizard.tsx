@@ -840,25 +840,6 @@ function buildSteps(state: QuoteState): { id: StepId; label: string }[] {
   return out;
 }
 
-function stepValid(id: StepId, state: QuoteState): boolean {
-  switch (id) {
-    case 'propertyType': return !!state.propertyType;
-    case 'size': return !!state.size;
-    case 'originFloor': return isHouseType(state.propertyType) ? !!state.stories : !!state.origin.floor;
-    case 'originElevator': return state.origin.elevator !== null;
-    case 'originLocation': return !!state.origin.area;
-    case 'originAccess': return !!state.origin.parkingDistance;
-    case 'destLocation': return !!state.destination.area;
-    case 'destFloor': return !!state.destination.floor;
-    case 'destElevator': return state.destination.elevator !== null;
-    case 'destAccess': return !!state.destination.parkingDistance;
-    case 'boxes': return !!state.boxes;
-    case 'crew': return state.crew > 0;
-    case 'contact': return !!(state.firstName && state.phone);
-    default: return true; // items, special, services, date, flexibility are optional
-  }
-}
-
 /* ─── Main export ─── */
 export default function QuoteWizard({ onBack, standalone }: { onBack?: () => void; standalone?: boolean }) {
   const [stepId, setStepId] = useState<'welcome' | StepId>('welcome');
@@ -872,7 +853,10 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
   const current = idx >= 0 ? steps[idx] : null;
   const total = steps.length;
   const isLast = idx === total - 1;
-  const valid = current ? stepValid(current.id, state) : true;
+  // Every intermediate page is skippable — leave it blank and move on. The only
+  // gate is the final submit: we need at least a phone or email to follow up.
+  const reachable = !!state.phone.trim() || !!state.email.trim();
+  const canAdvance = !current ? true : (isLast ? reachable : true);
   const estimate = estimateQuote(state);
 
   const setOrigin = (patch: Partial<AccessInfo>) => setState(p => ({ ...p, origin: { ...p.origin, ...patch } }));
@@ -910,7 +894,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
   };
 
   const goNext = () => {
-    if (!valid) return;
+    if (!canAdvance) return;
     if (isLast) { submit(); return; }
     setStepId(steps[idx + 1].id);
     window.scrollTo({ top: 0 });
@@ -1286,7 +1270,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">First Name *</label>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">First Name</label>
                   <input
                     type="text"
                     value={state.firstName}
@@ -1308,7 +1292,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Phone Number *</label>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Phone Number</label>
                   <input
                     type="tel"
                     value={state.phone}
@@ -1328,6 +1312,10 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                   />
                 </div>
               </div>
+              {!reachable && (
+                <p className="text-xs text-amber-600">📞 Add a phone number or email so we can reach you with your quote.</p>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1">Anything else we should know? <span className="font-normal text-gray-400">(optional)</span></label>
                 <textarea
@@ -1391,9 +1379,9 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
 
             <button
               onClick={goNext}
-              disabled={!valid}
+              disabled={!canAdvance}
               className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white transition-all
-                ${valid ? 'bg-teal-600 hover:bg-teal-700 shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                ${canAdvance ? 'bg-teal-600 hover:bg-teal-700 shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             >
               {isLast ? <>Send My Info <ArrowRight className="h-4 w-4" /></> : <>Continue <ChevronRight className="h-4 w-4" /></>}
             </button>
