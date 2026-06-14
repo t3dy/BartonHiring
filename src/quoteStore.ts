@@ -28,7 +28,7 @@ export interface QuoteRecord {
   promoCode?: string;
   origin: StoredAccessInfo;
   destination: StoredAccessInfo;
-  items: string[];
+  items: Record<string, number>;
   specialItems: string[];
   services: string[];
   moveDate: string;
@@ -102,7 +102,7 @@ const SEED_QUOTES: QuoteRecord[] = [
     propertyType: 'apartment', size: '2br', boxes: 'medium', crew: 3, promoCode: 'ONTHELAKE5',
     origin: { area: 'downtown-austin', customArea: '', address: '1204 E 6th St', zip: '78702', floor: '3rd', elevator: true, parkingDistance: 'short', narrowHallways: false, coiRequired: true },
     destination: { area: 'south-austin', customArea: '', address: '2803 Manchaca Rd', zip: '78704', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
-    items: ['sofa', 'bed-queen', 'dresser', 'dining-table', 'fridge', 'washer', 'dryer', 'boxes-many'],
+    items: { sofa: 1, 'bed-queen': 2, dresser: 2, 'dining-table': 1, fridge: 1, washer: 1, dryer: 1 },
     specialItems: ['mirrors', 'art'],
     services: ['packing', 'insurance'],
     moveDate: '2026-06-21', flexibility: 'week',
@@ -118,7 +118,7 @@ const SEED_QUOTES: QuoteRecord[] = [
     propertyType: 'house', size: '3br', stories: '2', boxes: 'large', crew: 4,
     origin: { area: 'north-austin', customArea: '', address: '4512 Bull Creek Rd', zip: '78731', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
     destination: { area: 'round-rock', customArea: '', address: '812 Sagebrush Trail', zip: '78681', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
-    items: ['sectional', 'bed-king', 'bed-queen', 'dresser', 'piano', 'pool-table', 'washer', 'dryer', 'fridge', 'boxes-many'],
+    items: { sectional: 1, 'bed-king': 1, 'bed-queen': 2, dresser: 3, piano: 1, 'pool-table': 1, washer: 1, dryer: 1, fridge: 1 },
     specialItems: ['antiques', 'art'],
     services: ['disassembly', 'insurance'],
     moveDate: '2026-06-14', flexibility: 'exact',
@@ -134,7 +134,7 @@ const SEED_QUOTES: QuoteRecord[] = [
     propertyType: 'apartment', size: 'studio',
     origin: { area: 'downtown-austin', customArea: '', address: '111 Sandra Muraida Way', zip: '78703', floor: '5th+', elevator: true, parkingDistance: 'long', narrowHallways: false, coiRequired: true },
     destination: { area: 'downtown-austin', customArea: '', address: '2222 Rio Grande St', zip: '78705', floor: '2nd', elevator: false, parkingDistance: 'short', narrowHallways: true, coiRequired: false },
-    items: ['sofa', 'bed-queen', 'dresser', 'bookshelf', 'boxes-some'],
+    items: { sofa: 1, 'bed-queen': 1, dresser: 1, bookshelf: 2 },
     specialItems: [],
     services: [],
     moveDate: '2026-06-08', flexibility: 'exact',
@@ -150,7 +150,7 @@ const SEED_QUOTES: QuoteRecord[] = [
     propertyType: 'house', size: '4br',
     origin: { area: 'south-austin', customArea: '', address: '9201 Brodie Ln', zip: '78748', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
     destination: { area: 'north-austin', customArea: '', address: '1400 Spicewood Springs Rd', zip: '78759', floor: 'Ground / 1st', elevator: null, parkingDistance: 'door', narrowHallways: false, coiRequired: false },
-    items: ['sofa', 'sectional', 'bed-king', 'bed-queen', 'bed-queen', 'dresser', 'wardrobe', 'dining-table', 'fridge', 'washer', 'dryer', 'stove', 'dishwasher', 'gym', 'boxes-many'],
+    items: { sofa: 1, sectional: 1, 'bed-king': 1, 'bed-queen': 2, dresser: 2, wardrobe: 1, 'dining-table': 1, fridge: 1, washer: 1, dryer: 1, stove: 1, gym: 1 },
     specialItems: ['wine', 'art'],
     services: ['packing', 'disassembly', 'insurance'],
     moveDate: '2026-05-30', flexibility: 'exact',
@@ -162,6 +162,17 @@ const SEED_QUOTES: QuoteRecord[] = [
 /* ─── Storage key ─── */
 const STORAGE_KEY = 'bsm_quotes';
 
+/* Older saved quotes stored items as a string[]; normalize to a count map so
+   the dashboard renders consistently regardless of when a quote was captured. */
+function normalize(q: QuoteRecord): QuoteRecord {
+  if (Array.isArray(q.items)) {
+    const items: Record<string, number> = {};
+    (q.items as unknown as string[]).forEach(id => { items[id] = (items[id] ?? 0) + 1; });
+    return { ...q, items };
+  }
+  return q;
+}
+
 /* ─── Public API ─── */
 export function getQuotes(): QuoteRecord[] {
   try {
@@ -171,7 +182,7 @@ export function getQuotes(): QuoteRecord[] {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_QUOTES));
       return SEED_QUOTES;
     }
-    return JSON.parse(raw) as QuoteRecord[];
+    return (JSON.parse(raw) as QuoteRecord[]).map(normalize);
   } catch {
     return [];
   }

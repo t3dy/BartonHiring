@@ -28,7 +28,7 @@ interface QuoteState {
   stories: string;
   origin: AccessInfo;
   destination: AccessInfo;
-  items: string[];
+  items: Record<string, number>;
   specialItems: string[];
   services: string[];
   boxes: string;
@@ -88,7 +88,7 @@ const PROMOS: Record<string, { label: string; kind: 'pct' | 'flat'; value: numbe
 function recommendedCrew(state: QuoteState): number {
   const bySize: Record<string, number> = { studio: 2, '1br': 2, '2br': 3, '3br': 3, '4br': 4 };
   let crew = bySize[state.size] ?? 2;
-  if (state.items.includes('piano') || state.items.includes('pool-table')) crew += 1;
+  if ((state.items['piano'] ?? 0) > 0 || (state.items['pool-table'] ?? 0) > 0) crew += 1;
   const hardStairs = (a: AccessInfo) => a.elevator === false && FLOORS.indexOf(a.floor) >= 2;
   if (hardStairs(state.origin) || hardStairs(state.destination) || state.stories === '3+') crew += 1;
   return Math.min(5, Math.max(2, crew));
@@ -141,7 +141,6 @@ const ITEMS_BY_CATEGORY = [
       { id: 'washer', label: 'Washer', emoji: '🫧' },
       { id: 'dryer', label: 'Dryer', emoji: '💨' },
       { id: 'stove', label: 'Stove / Range', emoji: '🍳' },
-      { id: 'dishwasher', label: 'Dishwasher', emoji: '🍽️' },
       { id: 'tv-large', label: 'Large TV (55"+)', emoji: '📺' },
     ],
   },
@@ -154,14 +153,6 @@ const ITEMS_BY_CATEGORY = [
       { id: 'patio', label: 'Patio Set / Grill', emoji: '🌿' },
       { id: 'gym', label: 'Gym Equipment', emoji: '🏋️' },
       { id: 'bike', label: 'Bicycles', emoji: '🚲' },
-    ],
-  },
-  {
-    category: 'Boxes & Bins',
-    items: [
-      { id: 'boxes-few', label: 'A few boxes', emoji: '📦' },
-      { id: 'boxes-some', label: '10–20 boxes', emoji: '📦📦' },
-      { id: 'boxes-many', label: '20+ boxes', emoji: '📦📦📦' },
     ],
   },
 ];
@@ -213,10 +204,11 @@ function estimateQuote(state: QuoteState): { low: number; high: number } {
   if (state.origin.parkingDistance === 'long') base += 75;
   if (state.destination.parkingDistance === 'long') base += 75;
 
-  if (state.items.includes('piano')) base += 200;
-  if (state.items.includes('pool-table')) base += 150;
-  if (state.items.includes('safe')) base += 75;
-  if (state.items.includes('gym')) base += 75;
+  const qty = (id: string) => state.items[id] ?? 0;
+  base += 200 * qty('piano');
+  base += 150 * qty('pool-table');
+  base += 75 * qty('safe');
+  base += 75 * qty('gym');
 
   if (state.services.includes('packing')) base += 300;
   else if (state.services.includes('partial-pack')) base += 150;
@@ -254,7 +246,7 @@ const defaultAccess: AccessInfo = {
 const defaultState: QuoteState = {
   propertyType: '', size: '', stories: '',
   origin: { ...defaultAccess }, destination: { ...defaultAccess },
-  items: [], specialItems: [], services: [],
+  items: {}, specialItems: [], services: [],
   boxes: '', crew: 0, promoCode: '',
   moveDate: '', flexibility: '',
   firstName: '', lastName: '', phone: '', email: '', notes: '',
@@ -310,6 +302,47 @@ function ItemTile({
   );
 }
 
+/* Item tile with a quantity stepper — tap the tile to add one (tap 3× for 3
+   couches); the −/＋ row appears once selected so over-taps are easy to fix. */
+function QtyItemTile({
+  emoji, label, qty, onAdd, onRemove,
+}: {
+  emoji: string; label: string; qty: number; onAdd: () => void; onRemove: () => void;
+}) {
+  const selected = qty > 0;
+  return (
+    <div
+      className={`relative flex flex-col items-center justify-between rounded-xl border-2 p-3 text-center transition-all select-none min-h-[96px]
+        ${selected ? 'border-teal-500 bg-teal-50 shadow-sm' : 'border-gray-200 bg-white hover:border-teal-300'}`}
+    >
+      {selected && (
+        <div className="absolute top-1.5 right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-500 px-1 text-xs font-bold text-white">
+          ×{qty}
+        </div>
+      )}
+      <button onClick={onAdd} className="flex flex-1 flex-col items-center justify-center cursor-pointer w-full">
+        <span className="text-2xl mb-1">{emoji}</span>
+        <span className={`text-xs font-medium leading-tight ${selected ? 'text-teal-700' : 'text-gray-700'}`}>{label}</span>
+      </button>
+      {selected && (
+        <div className="mt-2 flex items-center gap-3">
+          <button
+            onClick={onRemove}
+            aria-label={`Remove one ${label}`}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white border-2 border-teal-300 text-teal-700 font-bold hover:bg-teal-100"
+          >−</button>
+          <span className="text-sm font-bold text-teal-700 w-4">{qty}</span>
+          <button
+            onClick={onAdd}
+            aria-label={`Add one ${label}`}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-600 text-white font-bold hover:bg-teal-700"
+          >＋</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RadioTile({
   label, selected, onClick,
 }: {
@@ -345,7 +378,6 @@ const VOICE_KEYWORDS: [RegExp, string][] = [
   [/washer|washing machine/, 'washer'],
   [/dryer/, 'dryer'],
   [/stove|oven|range/, 'stove'],
-  [/dishwasher/, 'dishwasher'],
   [/tv|television/, 'tv-large'],
   [/piano/, 'piano'],
   [/safe|gun cabinet/, 'safe'],
@@ -476,92 +508,60 @@ function TownPicker({
   );
 }
 
-/* ─── Access step ─── */
-function AccessStep({
-  title, emoji, access, onChange,
-}: {
-  title: string; emoji: string; access: AccessInfo; onChange: (a: AccessInfo) => void;
-}) {
+/* ─── Access sub-steps (each its own single-focus page) ─── */
+function ElevatorButtons({ value, onChange }: { value: boolean | null; onChange: (v: boolean) => void }) {
   return (
-    <div className="space-y-5">
-      <div className="text-center mb-1">
-        <span className="text-4xl">{emoji}</span>
-        <h3 className="mt-2 text-lg font-bold text-gray-900">{title}</h3>
-      </div>
+    <div className="flex gap-3">
+      <button
+        onClick={() => onChange(true)}
+        className={`flex-1 rounded-2xl border-2 py-6 px-4 text-base font-bold transition-all
+          ${value === true ? 'border-green-500 bg-green-50 text-green-700 shadow-md' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
+      >
+        <span className="block text-3xl mb-1">🛗</span>
+        Yes, elevator
+      </button>
+      <button
+        onClick={() => onChange(false)}
+        className={`flex-1 rounded-2xl border-2 py-6 px-4 text-base font-bold transition-all
+          ${value === false ? 'border-rose-400 bg-rose-50 text-rose-700 shadow-md' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
+      >
+        <span className="block text-3xl mb-1">🚶</span>
+        Stairs only
+      </button>
+    </div>
+  );
+}
 
-      <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-2">Which area?</label>
-        <TownPicker
-          value={access.area}
-          customValue={access.customArea}
-          onSelect={area => onChange({ ...access, area })}
-          onCustomChange={customArea => onChange({ ...access, customArea })}
+function OptionalAddress({ access, onChange }: { access: AccessInfo; onChange: (a: AccessInfo) => void }) {
+  return (
+    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div className="sm:col-span-2">
+        <label className="block text-xs font-semibold text-gray-500 mb-1">Street Address <span className="font-normal text-gray-400">(optional)</span></label>
+        <input
+          type="text"
+          value={access.address}
+          onChange={e => onChange({ ...access, address: e.target.value })}
+          placeholder="123 Main St, Austin TX"
+          className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
         />
       </div>
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="sm:col-span-2">
-          <label className="block text-xs font-semibold text-gray-500 mb-1">Street Address <span className="font-normal text-gray-400">(optional)</span></label>
-          <input
-            type="text"
-            value={access.address}
-            onChange={e => onChange({ ...access, address: e.target.value })}
-            placeholder="123 Main St, Austin TX"
-            className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 mb-1">ZIP Code</label>
-          <input
-            type="text"
-            value={access.zip}
-            onChange={e => onChange({ ...access, zip: e.target.value })}
-            placeholder="78701"
-            className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
-          />
-        </div>
-      </div>
-
       <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-2">What floor?</label>
-        <div className="flex flex-wrap gap-2">
-          {FLOORS.map(f => (
-            <RadioTile
-              key={f}
-              label={f}
-              selected={access.floor === f}
-              onClick={() => onChange({ ...access, floor: f, elevator: f === 'Ground / 1st' ? null : access.elevator })}
-            />
-          ))}
-        </div>
+        <label className="block text-xs font-semibold text-gray-500 mb-1">ZIP <span className="font-normal text-gray-400">(optional)</span></label>
+        <input
+          type="text"
+          value={access.zip}
+          onChange={e => onChange({ ...access, zip: e.target.value })}
+          placeholder="78701"
+          className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
+        />
       </div>
+    </div>
+  );
+}
 
-      {access.floor !== 'Ground / 1st' && (
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 mb-2">Is there an elevator?</label>
-          <div className="flex gap-3">
-            <button
-              onClick={() => onChange({ ...access, elevator: true })}
-              className={`flex-1 rounded-xl border-2 py-3 px-4 text-sm font-semibold transition-all
-                ${access.elevator === true
-                  ? 'border-green-500 bg-green-50 text-green-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
-            >
-              ✅ Yes, elevator
-            </button>
-            <button
-              onClick={() => onChange({ ...access, elevator: false })}
-              className={`flex-1 rounded-xl border-2 py-3 px-4 text-sm font-semibold transition-all
-                ${access.elevator === false
-                  ? 'border-rose-400 bg-rose-50 text-rose-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
-            >
-              🚶 Stairs only
-            </button>
-          </div>
-        </div>
-      )}
-
+function AccessBundle({ access, onChange }: { access: AccessInfo; onChange: (a: AccessInfo) => void }) {
+  return (
+    <div className="space-y-5">
       <div>
         <label className="block text-xs font-semibold text-gray-500 mb-2">How far is parking from the entrance?</label>
         <div className="flex flex-wrap gap-2">
@@ -679,7 +679,11 @@ function SubmittedScreen({
   const sizeLabel = SIZES.find(s => s.id === state.size)?.label ?? '';
   const propEmoji = PROPERTY_TYPES.find(p => p.id === state.propertyType)?.emoji ?? '🏠';
   const boxEmoji = BOX_STACKS.find(b => b.id === state.boxes)?.emoji ?? '';
-  const moveEmojis = state.items.map(id => ITEM_EMOJI[id]).filter(Boolean);
+  const moveEmojis = Object.entries(state.items)
+    .flatMap(([id, qty]) => Array(qty).fill(ITEM_EMOJI[id]))
+    .filter(Boolean)
+    .slice(0, 15);
+  const itemCount = Object.values(state.items).reduce((a, b) => a + b, 0);
   const promo = PROMOS[state.promoCode.trim().toUpperCase()];
 
   return (
@@ -737,11 +741,11 @@ function SubmittedScreen({
                 <span><strong>Target date:</strong> {new Date(state.moveDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
               </div>
             )}
-            {state.items.length > 0 && (
+            {itemCount > 0 && (
               <div className="flex gap-2">
                 <span className="shrink-0">📦</span>
                 <span>
-                  <strong>{state.items.length} item{state.items.length !== 1 ? 's' : ''}</strong> selected
+                  <strong>{itemCount} item{itemCount !== 1 ? 's' : ''}</strong> selected
                   {state.specialItems.length > 0 ? ` · ${state.specialItems.length} fragile/specialty` : ''}
                 </span>
               </div>
@@ -798,53 +802,131 @@ function SubmittedScreen({
   );
 }
 
-/* ─── Step labels ─── */
-const STEP_LABELS = [
-  'Property Type',
-  'Home Size',
-  'Moving From',
-  'Moving To',
-  'Your Items',
-  'Boxes & Crew',
-  'Extras & Services',
-  'Dates & Contact',
-];
-const TOTAL_STEPS = STEP_LABELS.length;
+/* ─── Dynamic step sequence ─── */
+type StepId =
+  | 'propertyType' | 'size' | 'originFloor' | 'originElevator' | 'originLocation' | 'originAccess'
+  | 'destLocation' | 'destFloor' | 'destElevator' | 'destAccess'
+  | 'items' | 'special' | 'boxes' | 'crew' | 'services'
+  | 'date' | 'flexibility' | 'contact';
+
+const FLOORED_TYPES = ['apartment', 'condo', 'office'];
+const isHouseType = (p: string) => p === 'house' || p === 'townhouse';
+
+/* Only the steps that apply to this move, in order. Conditional pages
+   (elevator) appear only when relevant, so most people see fewer screens. */
+function buildSteps(state: QuoteState): { id: StepId; label: string }[] {
+  const out: { id: StepId; label: string }[] = [];
+  out.push({ id: 'propertyType', label: 'Property' });
+  out.push({ id: 'size', label: 'Size' });
+  if (state.propertyType && state.propertyType !== 'storage')
+    out.push({ id: 'originFloor', label: isHouseType(state.propertyType) ? 'Stories' : 'Floor' });
+  if (FLOORED_TYPES.includes(state.propertyType) && state.origin.floor !== 'Ground / 1st')
+    out.push({ id: 'originElevator', label: 'Elevator' });
+  out.push({ id: 'originLocation', label: 'From' });
+  out.push({ id: 'originAccess', label: 'From access' });
+  out.push({ id: 'destLocation', label: 'To' });
+  out.push({ id: 'destFloor', label: 'To floor' });
+  if (state.destination.floor !== 'Ground / 1st')
+    out.push({ id: 'destElevator', label: 'To elevator' });
+  out.push({ id: 'destAccess', label: 'To access' });
+  out.push({ id: 'items', label: 'Items' });
+  out.push({ id: 'special', label: 'Fragile' });
+  out.push({ id: 'boxes', label: 'Boxes' });
+  out.push({ id: 'crew', label: 'Crew' });
+  out.push({ id: 'services', label: 'Services' });
+  out.push({ id: 'date', label: 'Date' });
+  out.push({ id: 'flexibility', label: 'Timing' });
+  out.push({ id: 'contact', label: 'Contact' });
+  return out;
+}
+
+function stepValid(id: StepId, state: QuoteState): boolean {
+  switch (id) {
+    case 'propertyType': return !!state.propertyType;
+    case 'size': return !!state.size;
+    case 'originFloor': return isHouseType(state.propertyType) ? !!state.stories : !!state.origin.floor;
+    case 'originElevator': return state.origin.elevator !== null;
+    case 'originLocation': return !!state.origin.area;
+    case 'originAccess': return !!state.origin.parkingDistance;
+    case 'destLocation': return !!state.destination.area;
+    case 'destFloor': return !!state.destination.floor;
+    case 'destElevator': return state.destination.elevator !== null;
+    case 'destAccess': return !!state.destination.parkingDistance;
+    case 'boxes': return !!state.boxes;
+    case 'crew': return state.crew > 0;
+    case 'contact': return !!(state.firstName && state.phone);
+    default: return true; // items, special, services, date, flexibility are optional
+  }
+}
 
 /* ─── Main export ─── */
 export default function QuoteWizard({ onBack, standalone }: { onBack?: () => void; standalone?: boolean }) {
-  const [step, setStep] = useState(0);
+  const [stepId, setStepId] = useState<'welcome' | StepId>('welcome');
   const [state, setState] = useState<QuoteState>({ ...defaultState });
   const [submitted, setSubmitted] = useState(false);
   const [promoOpen, setPromoOpen] = useState(false);
 
-  const toggleItem = (id: string, field: 'items' | 'specialItems' | 'services') => {
-    setState(prev => {
-      const arr = prev[field] as string[];
-      return { ...prev, [field]: arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id] };
-    });
-  };
-
-  const needsStories = state.propertyType === 'house' || state.propertyType === 'townhouse';
-
-  const canProceed = () => {
-    if (step === 1) return !!state.propertyType;
-    if (step === 2) return !!state.size && (!needsStories || !!state.stories);
-    if (step === 3) return !!state.origin.area && !!state.origin.parkingDistance;
-    if (step === 4) return !!state.destination.area && !!state.destination.parkingDistance;
-    if (step === 6) return !!state.boxes && state.crew > 0;
-    if (step === 8) return !!(state.firstName && state.phone);
-    return true;
-  };
-
+  const steps = buildSteps(state);
+  const idx = steps.findIndex(s => s.id === stepId);
+  const onWelcome = stepId === 'welcome';
+  const current = idx >= 0 ? steps[idx] : null;
+  const total = steps.length;
+  const isLast = idx === total - 1;
+  const valid = current ? stepValid(current.id, state) : true;
   const estimate = estimateQuote(state);
+
+  const setOrigin = (patch: Partial<AccessInfo>) => setState(p => ({ ...p, origin: { ...p.origin, ...patch } }));
+  const setDest = (patch: Partial<AccessInfo>) => setState(p => ({ ...p, destination: { ...p.destination, ...patch } }));
+
+  const addItem = (id: string) => setState(p => ({ ...p, items: { ...p.items, [id]: (p.items[id] ?? 0) + 1 } }));
+  const removeItem = (id: string) => setState(p => {
+    const next = (p.items[id] ?? 0) - 1;
+    const items = { ...p.items };
+    if (next <= 0) delete items[id]; else items[id] = next;
+    return { ...p, items };
+  });
+  const toggleSet = (id: string, field: 'specialItems' | 'services') => setState(p => {
+    const arr = p[field];
+    return { ...p, [field]: arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id] };
+  });
+
+  const itemCount = Object.values(state.items).reduce((a, b) => a + b, 0);
+
+  const submit = () => {
+    saveQuote({
+      firstName: state.firstName, lastName: state.lastName,
+      phone: state.phone, email: state.email,
+      propertyType: state.propertyType, size: state.size,
+      stories: state.stories,
+      origin: state.origin, destination: state.destination,
+      items: state.items, specialItems: state.specialItems,
+      services: state.services,
+      boxes: state.boxes, crew: state.crew, promoCode: state.promoCode,
+      moveDate: state.moveDate, flexibility: state.flexibility,
+      notes: state.notes,
+      estimateLow: estimate.low, estimateHigh: estimate.high,
+    });
+    setSubmitted(true);
+  };
+
+  const goNext = () => {
+    if (!valid) return;
+    if (isLast) { submit(); return; }
+    setStepId(steps[idx + 1].id);
+    window.scrollTo({ top: 0 });
+  };
+  const goPrev = () => {
+    if (idx <= 0) setStepId('welcome');
+    else setStepId(steps[idx - 1].id);
+    window.scrollTo({ top: 0 });
+  };
 
   if (submitted) {
     return (
       <SubmittedScreen
         state={state}
         estimate={estimate}
-        onReset={() => { setSubmitted(false); setStep(0); setState({ ...defaultState }); }}
+        onReset={() => { setSubmitted(false); setStepId('welcome'); setState({ ...defaultState }); }}
       />
     );
   }
@@ -873,16 +955,16 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
           </a>
         </div>
 
-        {step >= 1 && step <= TOTAL_STEPS && (
+        {current && (
           <div className="mx-auto max-w-2xl px-4 pb-3">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-gray-400 font-medium">Step {step} of {TOTAL_STEPS} — {STEP_LABELS[step - 1]}</span>
-              <span className="text-xs text-teal-600 font-semibold">{Math.round((step / TOTAL_STEPS) * 100)}%</span>
+              <span className="text-xs text-gray-400 font-medium">Step {idx + 1} of {total} — {current.label}</span>
+              <span className="text-xs text-teal-600 font-semibold">{Math.round(((idx + 1) / total) * 100)}%</span>
             </div>
             <div className="h-1.5 w-full rounded-full bg-gray-100">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-teal-500 to-brand-500 transition-all duration-500"
-                style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
+                style={{ width: `${((idx + 1) / total) * 100}%` }}
               />
             </div>
           </div>
@@ -891,16 +973,11 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
 
       {/* Page content */}
       <div className="mx-auto max-w-2xl px-4 py-8">
+        {onWelcome && <WelcomeStep onStart={() => setStepId(steps[0].id)} />}
 
-        {/* ── Step 0: Welcome ── */}
-        {step === 0 && <WelcomeStep onStart={() => setStep(1)} />}
-
-        {/* ── Step 1: Property type ── */}
-        {step === 1 && (
-          <StepWrapper
-            title="What type of property are you moving from?"
-            subtitle="This helps us plan the right crew and equipment."
-          >
+        {/* ── Property type ── */}
+        {stepId === 'propertyType' && (
+          <StepWrapper title="What are you moving out of?" subtitle="This helps us plan the right crew and equipment.">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {PROPERTY_TYPES.map(pt => (
                 <SelectTile
@@ -916,15 +993,12 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
           </StepWrapper>
         )}
 
-        {/* ── Step 2: Size ── */}
-        {step === 2 && (
-          <StepWrapper
-            title="How big is your current home?"
-            subtitle="Count your rooms — we'll figure out the square footage from that."
-          >
+        {/* ── Size (rooms → sq ft) ── */}
+        {stepId === 'size' && (
+          <StepWrapper title="How many bedrooms?" subtitle="Count your rooms — we'll estimate the square footage from that, no measuring needed.">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {SIZES.map(s => {
-                const mcMansion = s.id === '4br' && needsStories;
+                const mcMansion = s.id === '4br' && isHouseType(state.propertyType);
                 return (
                   <SelectTile
                     key={s.id}
@@ -937,215 +1011,278 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                 );
               })}
             </div>
+          </StepWrapper>
+        )}
 
-            {needsStories && state.size && (
-              <div className="mt-6">
-                <label className="block text-xs font-semibold text-gray-500 mb-2">How many stories?</label>
-                <div className="flex flex-wrap gap-2">
-                  {STORY_OPTIONS.map(opt => (
-                    <RadioTile
-                      key={opt.id}
-                      label={opt.label}
-                      selected={state.stories === opt.id}
-                      onClick={() => setState(prev => ({ ...prev, stories: opt.id }))}
-                    />
-                  ))}
-                </div>
+        {/* ── Floor / Stories (adaptive) ── */}
+        {stepId === 'originFloor' && (
+          isHouseType(state.propertyType) ? (
+            <StepWrapper title="How many stories is your home?" subtitle="More levels means more stairs for the crew.">
+              <div className="grid grid-cols-1 gap-2">
+                {STORY_OPTIONS.map(opt => (
+                  <RadioTile
+                    key={opt.id}
+                    label={opt.label}
+                    selected={state.stories === opt.id}
+                    onClick={() => setState(prev => ({ ...prev, stories: opt.id }))}
+                  />
+                ))}
               </div>
-            )}
+            </StepWrapper>
+          ) : (
+            <StepWrapper title="Which floor is your place on?" subtitle="The higher up without an elevator, the more time the move takes.">
+              <div className="grid grid-cols-1 gap-2">
+                {FLOORS.map(f => (
+                  <RadioTile
+                    key={f}
+                    label={f}
+                    selected={state.origin.floor === f}
+                    onClick={() => setOrigin({ floor: f, elevator: f === 'Ground / 1st' ? null : state.origin.elevator })}
+                  />
+                ))}
+              </div>
+            </StepWrapper>
+          )
+        )}
+
+        {/* ── Origin elevator ── */}
+        {stepId === 'originElevator' && (
+          <StepWrapper title="Is there an elevator?" subtitle="At your current place — this changes the carry time a lot.">
+            <ElevatorButtons value={state.origin.elevator} onChange={v => setOrigin({ elevator: v })} />
           </StepWrapper>
         )}
 
-        {/* ── Step 3: Origin ── */}
-        {step === 3 && (
-          <StepWrapper
-            title="Tell us about where you're moving from"
-            subtitle="Access details help us plan crew size and time."
-          >
-            <AccessStep
-              title="Your Current Location"
-              emoji="🏠"
-              access={state.origin}
-              onChange={origin => setState(prev => ({ ...prev, origin }))}
+        {/* ── Origin location ── */}
+        {stepId === 'originLocation' && (
+          <StepWrapper title="Where are you moving from?" subtitle="Pick your area. Street address is optional — we confirm it on the call.">
+            <TownPicker
+              value={state.origin.area}
+              customValue={state.origin.customArea}
+              onSelect={area => setOrigin({ area })}
+              onCustomChange={customArea => setOrigin({ customArea })}
             />
+            <OptionalAddress access={state.origin} onChange={o => setState(p => ({ ...p, origin: o }))} />
           </StepWrapper>
         )}
 
-        {/* ── Step 4: Destination ── */}
-        {step === 4 && (
-          <StepWrapper
-            title="And where are you moving to?"
-            subtitle="Even an approximate area helps — we service all of Greater Austin."
-          >
-            <AccessStep
-              title="Your Destination"
-              emoji="📍"
-              access={state.destination}
-              onChange={destination => setState(prev => ({ ...prev, destination }))}
+        {/* ── Origin access ── */}
+        {stepId === 'originAccess' && (
+          <StepWrapper title="A few access details" subtitle="At your current place — these help us send the right crew.">
+            <AccessBundle access={state.origin} onChange={o => setState(p => ({ ...p, origin: o }))} />
+          </StepWrapper>
+        )}
+
+        {/* ── Destination location ── */}
+        {stepId === 'destLocation' && (
+          <StepWrapper title="Where are you moving to?" subtitle="Even an approximate area helps — we service all of Greater Austin.">
+            <TownPicker
+              value={state.destination.area}
+              customValue={state.destination.customArea}
+              onSelect={area => setDest({ area })}
+              onCustomChange={customArea => setDest({ customArea })}
             />
+            <OptionalAddress access={state.destination} onChange={d => setState(p => ({ ...p, destination: d }))} />
           </StepWrapper>
         )}
 
-        {/* ── Step 5: Items ── */}
-        {step === 5 && (
-          <StepWrapper
-            title="What are you moving?"
-            subtitle="Tap everything that applies — don't forget the stuff hiding in closets!"
-          >
+        {/* ── Destination floor ── */}
+        {stepId === 'destFloor' && (
+          <StepWrapper title="What floor is your new place on?" subtitle="Pick the ground floor if it's a house or single-level.">
+            <div className="grid grid-cols-1 gap-2">
+              {FLOORS.map(f => (
+                <RadioTile
+                  key={f}
+                  label={f}
+                  selected={state.destination.floor === f}
+                  onClick={() => setDest({ floor: f, elevator: f === 'Ground / 1st' ? null : state.destination.elevator })}
+                />
+              ))}
+            </div>
+          </StepWrapper>
+        )}
+
+        {/* ── Destination elevator ── */}
+        {stepId === 'destElevator' && (
+          <StepWrapper title="Is there an elevator at your new place?" subtitle="Stairs-only on an upper floor adds carry time.">
+            <ElevatorButtons value={state.destination.elevator} onChange={v => setDest({ elevator: v })} />
+          </StepWrapper>
+        )}
+
+        {/* ── Destination access ── */}
+        {stepId === 'destAccess' && (
+          <StepWrapper title="A few access details" subtitle="At your new place.">
+            <AccessBundle access={state.destination} onChange={d => setState(p => ({ ...p, destination: d }))} />
+          </StepWrapper>
+        )}
+
+        {/* ── Items (the one multi-pick page) ── */}
+        {stepId === 'items' && (
+          <StepWrapper title="What are you moving?" subtitle="Tap an item to add it — tap again to add more (3 taps = 3 couches). Use −/＋ to fix the count.">
             <VoiceItemsButton
-              onMatches={ids => setState(prev => ({
-                ...prev,
-                items: [...prev.items, ...ids.filter(id => !prev.items.includes(id))],
-              }))}
+              onMatches={ids => setState(prev => {
+                const items = { ...prev.items };
+                ids.forEach(id => { if (!items[id]) items[id] = 1; });
+                return { ...prev, items };
+              })}
             />
             {ITEMS_BY_CATEGORY.map(cat => (
               <div key={cat.category} className="mb-5">
                 <h4 className="text-xs font-bold uppercase text-gray-400 mb-2 tracking-wide">{cat.category}</h4>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {cat.items.map(item => (
-                    <ItemTile
+                    <QtyItemTile
                       key={item.id}
                       emoji={item.emoji}
                       label={item.label}
-                      selected={state.items.includes(item.id)}
-                      onClick={() => toggleItem(item.id, 'items')}
+                      qty={state.items[item.id] ?? 0}
+                      onAdd={() => addItem(item.id)}
+                      onRemove={() => removeItem(item.id)}
                     />
                   ))}
                 </div>
               </div>
             ))}
-            {state.items.length > 0 && (
+            {itemCount > 0 && (
               <p className="text-xs text-teal-600 font-semibold text-center mt-2">
-                {state.items.length} item{state.items.length !== 1 ? 's' : ''} selected
+                {itemCount} item{itemCount !== 1 ? 's' : ''} on the truck 🚚
               </p>
             )}
           </StepWrapper>
         )}
 
-        {/* ── Step 6: Boxes & Crew ── */}
-        {step === 6 && (
-          <StepWrapper
-            title="Boxes and salamanders"
-            subtitle="Roughly how many boxes, and how many movers do you want on the job?"
-          >
-            <div className="mb-7">
-              <h4 className="text-xs font-bold uppercase text-gray-400 mb-2 tracking-wide">How many boxes (roughly)?</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {BOX_STACKS.map(b => (
-                  <SelectTile
-                    key={b.id}
-                    emoji={b.emoji}
-                    label={b.label}
-                    desc={b.desc}
-                    selected={state.boxes === b.id}
-                    onClick={() => setState(prev => ({ ...prev, boxes: b.id }))}
-                  />
-                ))}
-              </div>
+        {/* ── Special / fragile ── */}
+        {stepId === 'special' && (
+          <StepWrapper title="Anything fragile or special?" subtitle="Tap anything that needs extra care or special handling. Skip if nothing applies.">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {SPECIAL_ITEMS.map(item => (
+                <ItemTile
+                  key={item.id}
+                  emoji={item.emoji}
+                  label={item.label}
+                  selected={state.specialItems.includes(item.id)}
+                  onClick={() => toggleSet(item.id, 'specialItems')}
+                />
+              ))}
+            </div>
+          </StepWrapper>
+        )}
+
+        {/* ── Boxes ── */}
+        {stepId === 'boxes' && (
+          <StepWrapper title="Roughly how many boxes?" subtitle="A ballpark is fine — pick the stack that looks closest.">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {BOX_STACKS.map(b => (
+                <SelectTile
+                  key={b.id}
+                  emoji={b.emoji}
+                  label={b.label}
+                  desc={b.desc}
+                  selected={state.boxes === b.id}
+                  onClick={() => setState(prev => ({ ...prev, boxes: b.id }))}
+                />
+              ))}
+            </div>
+          </StepWrapper>
+        )}
+
+        {/* ── Crew (salamanders) ── */}
+        {stepId === 'crew' && (
+          <StepWrapper title="Pick your salamanders 🦎" subtitle={`Our movers. For a move like yours we recommend ${recommendedCrew(state)}.`}>
+            <div className="grid grid-cols-4 gap-2">
+              {[2, 3, 4, 5].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setState(prev => ({ ...prev, crew: n }))}
+                  className={`flex flex-col items-center justify-center rounded-2xl border-2 p-3 transition-all
+                    ${state.crew === n ? 'border-teal-500 bg-teal-50 shadow-md scale-[1.03]' : 'border-gray-200 bg-white hover:border-teal-300'}`}
+                >
+                  <span className="text-lg leading-tight">{'🦎'.repeat(n > 3 ? 3 : n)}{n > 3 ? <span className="block">{'🦎'.repeat(n - 3)}</span> : null}</span>
+                  <span className={`mt-1 text-sm font-bold ${state.crew === n ? 'text-teal-700' : 'text-gray-800'}`}>{n}</span>
+                </button>
+              ))}
             </div>
 
-            <div>
-              <h4 className="text-xs font-bold uppercase text-gray-400 mb-1 tracking-wide">Pick your salamanders 🦎</h4>
-              <p className="text-sm text-gray-500 mb-3">
-                Our movers. For your move we recommend <strong className="text-teal-700">{recommendedCrew(state)}</strong>.
-              </p>
-              <div className="grid grid-cols-4 gap-2">
-                {[2, 3, 4, 5].map(n => (
-                  <button
-                    key={n}
-                    onClick={() => setState(prev => ({ ...prev, crew: n }))}
-                    className={`flex flex-col items-center justify-center rounded-2xl border-2 p-3 transition-all
-                      ${state.crew === n
-                        ? 'border-teal-500 bg-teal-50 shadow-md scale-[1.03]'
-                        : 'border-gray-200 bg-white hover:border-teal-300'}`}
-                  >
-                    <span className="text-lg leading-tight">{'🦎'.repeat(n > 3 ? 3 : n)}{n > 3 ? <span className="block">{'🦎'.repeat(n - 3)}</span> : null}</span>
-                    <span className={`mt-1 text-sm font-bold ${state.crew === n ? 'text-teal-700' : 'text-gray-800'}`}>{n}</span>
-                  </button>
-                ))}
-              </div>
-
-              {state.crew > 0 && state.crew < recommendedCrew(state) && (
-                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
-                  <p className="text-sm text-amber-800">
-                    🦎💦 Whoa — with only {state.crew} salamander{state.crew > 1 ? 's' : ''}, this move could take a <em>really</em> long time
-                    {state.items.includes('piano') ? ' (and someone has to carry that piano!)' : ''}.
-                    We recommend <strong>{recommendedCrew(state)}</strong> for a move like yours.
-                  </p>
-                  <button
-                    onClick={() => setState(prev => ({ ...prev, crew: recommendedCrew(prev) }))}
-                    className="mt-2 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700"
-                  >
-                    Use {recommendedCrew(state)} salamanders
-                  </button>
-                </div>
-              )}
-              {state.crew > recommendedCrew(state) && (
-                <p className="mt-3 text-xs text-teal-600 font-medium">
-                  ⚡ Extra hands finish faster — adds a little to the estimate, saves you hours on move day.
+            {state.crew > 0 && state.crew < recommendedCrew(state) && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                <p className="text-sm text-amber-800">
+                  🦎💦 Whoa — with only {state.crew} salamander{state.crew > 1 ? 's' : ''}, this move could take a <em>really</em> long time
+                  {(state.items['piano'] ?? 0) > 0 ? ' (and someone has to carry that piano!)' : ''}.
+                  We recommend <strong>{recommendedCrew(state)}</strong> for a move like yours.
                 </p>
-              )}
+                <button
+                  onClick={() => setState(prev => ({ ...prev, crew: recommendedCrew(prev) }))}
+                  className="mt-2 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700"
+                >
+                  Use {recommendedCrew(state)} salamanders
+                </button>
+              </div>
+            )}
+            {state.crew > recommendedCrew(state) && (
+              <p className="mt-4 text-xs text-teal-600 font-medium">
+                ⚡ Extra hands finish faster — adds a little to the estimate, saves you hours on move day.
+              </p>
+            )}
+          </StepWrapper>
+        )}
+
+        {/* ── Services ── */}
+        {stepId === 'services' && (
+          <StepWrapper title="Want any add-on services?" subtitle="Tap any that interest you — skip if you just need the move itself.">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {SERVICES.map(svc => (
+                <button
+                  key={svc.id}
+                  onClick={() => toggleSet(svc.id, 'services')}
+                  className={`flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-all
+                    ${state.services.includes(svc.id) ? 'border-teal-500 bg-teal-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                >
+                  <span className="text-2xl shrink-0">{svc.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-bold ${state.services.includes(svc.id) ? 'text-teal-700' : 'text-gray-800'}`}>{svc.label}</p>
+                    <p className="text-xs text-gray-500">{svc.desc}</p>
+                  </div>
+                  {state.services.includes(svc.id) && <Check className="h-4 w-4 text-teal-500 shrink-0" />}
+                </button>
+              ))}
             </div>
           </StepWrapper>
         )}
 
-        {/* ── Step 7: Fragile items + services ── */}
-        {step === 7 && (
-          <StepWrapper
-            title="Anything fragile or special? Any add-ons?"
-            subtitle="We take extra care with the stuff that matters most."
-          >
-            <div className="mb-6">
-              <h4 className="text-xs font-bold uppercase text-gray-400 mb-1 tracking-wide">Fragile / Special Items</h4>
-              <p className="text-sm text-gray-500 mb-3">Tap anything that needs extra care or special handling.</p>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {SPECIAL_ITEMS.map(item => (
-                  <ItemTile
-                    key={item.id}
-                    emoji={item.emoji}
-                    label={item.label}
-                    selected={state.specialItems.includes(item.id)}
-                    onClick={() => toggleItem(item.id, 'specialItems')}
-                  />
-                ))}
-              </div>
-            </div>
+        {/* ── Move date ── */}
+        {stepId === 'date' && (
+          <StepWrapper title="When do you want to move?" subtitle="Pick a target date, or skip if you're still deciding.">
+            <input
+              type="date"
+              value={state.moveDate}
+              onChange={e => setState(prev => ({ ...prev, moveDate: e.target.value }))}
+              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-base focus:border-teal-500 focus:outline-none"
+            />
+          </StepWrapper>
+        )}
 
-            <div>
-              <h4 className="text-xs font-bold uppercase text-gray-400 mb-2 tracking-wide">Add-On Services</h4>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {SERVICES.map(svc => (
-                  <button
-                    key={svc.id}
-                    onClick={() => toggleItem(svc.id, 'services')}
-                    className={`flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-all
-                      ${state.services.includes(svc.id)
-                        ? 'border-teal-500 bg-teal-50'
-                        : 'border-gray-200 bg-white hover:border-gray-300'}`}
-                  >
-                    <span className="text-2xl shrink-0">{svc.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-bold ${state.services.includes(svc.id) ? 'text-teal-700' : 'text-gray-800'}`}>
-                        {svc.label}
-                      </p>
-                      <p className="text-xs text-gray-500">{svc.desc}</p>
-                    </div>
-                    {state.services.includes(svc.id) && (
-                      <Check className="h-4 w-4 text-teal-500 shrink-0" />
-                    )}
-                  </button>
-                ))}
-              </div>
+        {/* ── Flexibility ── */}
+        {stepId === 'flexibility' && (
+          <StepWrapper title="How flexible is that date?" subtitle="Flexibility can unlock better pricing on slower days.">
+            <div className="grid grid-cols-1 gap-2">
+              {[
+                { id: 'exact', label: '📌 It has to be exact' },
+                { id: 'week', label: '📅 Give or take a week' },
+                { id: 'month', label: '🗓️ Anytime that month' },
+              ].map(opt => (
+                <RadioTile
+                  key={opt.id}
+                  label={opt.label}
+                  selected={state.flexibility === opt.id}
+                  onClick={() => setState(prev => ({ ...prev, flexibility: opt.id as FlexibilityType }))}
+                />
+              ))}
             </div>
           </StepWrapper>
         )}
 
-        {/* ── Step 8: Date + contact ── */}
-        {step === 8 && (
-          <StepWrapper
-            title="Almost done — when and who?"
-            subtitle="We'll personally reach out to confirm your quote and answer any questions."
-          >
+        {/* ── Contact (grouped typed fields) ── */}
+        {stepId === 'contact' && (
+          <StepWrapper title="Last step — how do we reach you?" subtitle="We'll call you personally to confirm your quote and answer any questions.">
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
@@ -1191,40 +1328,12 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                   />
                 </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Target Move Date</label>
-                  <input
-                    type="date"
-                    value={state.moveDate}
-                    onChange={e => setState(prev => ({ ...prev, moveDate: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-2">How flexible?</label>
-                  <div className="flex gap-2">
-                    {[
-                      { id: 'exact', label: 'Exact' },
-                      { id: 'week', label: '±1 Week' },
-                      { id: 'month', label: '±1 Month' },
-                    ].map(opt => (
-                      <RadioTile
-                        key={opt.id}
-                        label={opt.label}
-                        selected={state.flexibility === opt.id}
-                        onClick={() => setState(prev => ({ ...prev, flexibility: opt.id as FlexibilityType }))}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Anything else we should know?</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Anything else we should know? <span className="font-normal text-gray-400">(optional)</span></label>
                 <textarea
                   value={state.notes}
                   onChange={e => setState(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Tight parking on the street, have a fragile grandfather clock, or just want to say hi — whatever's on your mind."
+                  placeholder="Tight street parking, a fragile grandfather clock, or just say hi — whatever's on your mind."
                   rows={3}
                   className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none resize-none"
                 />
@@ -1232,10 +1341,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
 
               <div>
                 {!promoOpen && !state.promoCode ? (
-                  <button
-                    onClick={() => setPromoOpen(true)}
-                    className="text-xs font-semibold text-teal-600 underline"
-                  >
+                  <button onClick={() => setPromoOpen(true)} className="text-xs font-semibold text-teal-600 underline">
                     🎟️ Live in a partner building? Enter your code
                   </button>
                 ) : (
@@ -1265,7 +1371,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                   <p className="text-xs font-bold uppercase text-teal-600 mb-1">Your Estimated Range</p>
                   <p className="text-2xl font-bold text-gray-900">${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    This is a ballpark based on your selections. The real quote comes from your personal call — where we confirm details and answer every question.
+                    This is a ballpark based on your selections. The real quote comes from your personal call.
                   </p>
                 </div>
               )}
@@ -1274,59 +1380,28 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
         )}
 
         {/* Navigation buttons */}
-        {step >= 1 && step <= TOTAL_STEPS && (
+        {current && (
           <div className="flex items-center justify-between mt-6">
             <button
-              onClick={() => setStep(s => s - 1)}
+              onClick={goPrev}
               className="flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-600 hover:border-gray-400 transition-colors"
             >
               <ChevronLeft className="h-4 w-4" /> Back
             </button>
 
-            {step < TOTAL_STEPS ? (
-              <button
-                onClick={() => { if (canProceed()) setStep(s => s + 1); }}
-                disabled={!canProceed()}
-                className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white transition-all
-                  ${canProceed()
-                    ? 'bg-teal-600 hover:bg-teal-700 shadow-md'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
-              >
-                Continue <ChevronRight className="h-4 w-4" />
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  if (!canProceed()) return;
-                  saveQuote({
-                    firstName: state.firstName, lastName: state.lastName,
-                    phone: state.phone, email: state.email,
-                    propertyType: state.propertyType, size: state.size,
-                    stories: state.stories,
-                    origin: state.origin, destination: state.destination,
-                    items: state.items, specialItems: state.specialItems,
-                    services: state.services,
-                    boxes: state.boxes, crew: state.crew, promoCode: state.promoCode,
-                    moveDate: state.moveDate, flexibility: state.flexibility,
-                    notes: state.notes,
-                    estimateLow: estimate.low, estimateHigh: estimate.high,
-                  });
-                  setSubmitted(true);
-                }}
-                disabled={!canProceed()}
-                className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white transition-all
-                  ${canProceed()
-                    ? 'bg-teal-600 hover:bg-teal-700 shadow-md'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
-              >
-                Send My Info <ArrowRight className="h-4 w-4" />
-              </button>
-            )}
+            <button
+              onClick={goNext}
+              disabled={!valid}
+              className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white transition-all
+                ${valid ? 'bg-teal-600 hover:bg-teal-700 shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+            >
+              {isLast ? <>Send My Info <ArrowRight className="h-4 w-4" /></> : <>Continue <ChevronRight className="h-4 w-4" /></>}
+            </button>
           </div>
         )}
 
-        {/* Pre-final steps: skip-to-call nudge */}
-        {step >= 1 && step < TOTAL_STEPS && (
+        {/* Skip-to-call nudge (every step but the last) */}
+        {current && !isLast && (
           <p className="mt-4 text-center text-xs text-gray-400">
             Prefer to just talk?{' '}
             <a href="tel:5125555555" className="text-teal-600 font-semibold underline">

@@ -33,6 +33,10 @@ function formatDate(iso: string): string {
   return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function itemTotal(items: Record<string, number>): number {
+  return Object.values(items ?? {}).reduce((a, b) => a + b, 0);
+}
+
 /* ─── Status badge ─── */
 function StatusBadge({ status }: { status: QuoteRecord['status'] }) {
   const cfg = STATUS_CONFIG[status];
@@ -79,7 +83,7 @@ function QuoteCard({ quote, onClick }: { quote: QuoteRecord; onClick: () => void
       <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 mb-3">
         <span>{prop}</span>
         {size && <><span>·</span><span>{size}</span></>}
-        {quote.items.length > 0 && <><span>·</span><span>{quote.items.length} items</span></>}
+        {itemTotal(quote.items) > 0 && <><span>·</span><span>{itemTotal(quote.items)} items</span></>}
         {quote.services.length > 0 && <><span>·</span><span>{quote.services.map(s => SERVICE_LABELS[s]).join(', ')}</span></>}
       </div>
 
@@ -316,15 +320,15 @@ function QuoteDetail({
         </Section>
 
         {/* Items */}
-        {(quote.items.length > 0 || quote.specialItems.length > 0) && (
+        {(itemTotal(quote.items) > 0 || quote.specialItems.length > 0) && (
           <Section title="Items" icon={<Package className="h-4 w-4 text-gray-500" />}>
-            {quote.items.length > 0 && (
+            {itemTotal(quote.items) > 0 && (
               <div className="mb-3">
                 <p className="text-xs text-gray-400 font-semibold mb-1.5">Standard Items</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {quote.items.map(id => (
+                  {Object.entries(quote.items).map(([id, qty]) => (
                     <span key={id} className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs text-gray-700 font-medium">
-                      {ITEM_LABELS[id] ?? id}
+                      {ITEM_LABELS[id] ?? id}{qty > 1 ? ` ×${qty}` : ''}
                     </span>
                   ))}
                 </div>
