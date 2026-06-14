@@ -64,7 +64,7 @@ export const SIZE_LABELS: Record<string, string> = {
 
 export const ITEM_LABELS: Record<string, string> = {
   sofa: 'Sofa', sectional: 'Sectional', 'bed-king': 'King Bed', 'bed-queen': 'Queen/Full Bed',
-  dresser: 'Dresser', 'dining-table': 'Dining Table', desk: 'Desk', bookshelf: 'Bookshelf',
+  dresser: 'Dresser / Safe / Cabinet', 'dining-table': 'Dining Table', desk: 'Desk', bookshelf: 'Bookshelf',
   wardrobe: 'Wardrobe', 'coffee-table': 'Coffee Table',
   fridge: 'Refrigerator', washer: 'Washer', dryer: 'Dryer', stove: 'Stove/Range',
   dishwasher: 'Dishwasher', 'tv-large': 'Large TV (55"+)',

@@ -126,7 +126,7 @@ const ITEMS_BY_CATEGORY = [
       { id: 'sectional', label: 'Sectional', emoji: '🛋️' },
       { id: 'bed-king', label: 'King Bed', emoji: '🛏️' },
       { id: 'bed-queen', label: 'Queen/Full Bed', emoji: '🛏️' },
-      { id: 'dresser', label: 'Dresser', emoji: '🗄️' },
+      { id: 'dresser', label: 'Dresser / Safe / Cabinet', emoji: '🗄️' },
       { id: 'dining-table', label: 'Dining Table', emoji: '🍽️' },
       { id: 'desk', label: 'Desk', emoji: '🖥️' },
       { id: 'bookshelf', label: 'Bookshelf', emoji: '📚' },
@@ -149,7 +149,6 @@ const ITEMS_BY_CATEGORY = [
     items: [
       { id: 'piano', label: 'Piano', emoji: '🎹' },
       { id: 'pool-table', label: 'Pool Table', emoji: '🎱' },
-      { id: 'safe', label: 'Safe / Cabinet', emoji: '🔒' },
       { id: 'patio', label: 'Patio Set / Grill', emoji: '🌿' },
       { id: 'gym', label: 'Gym Equipment', emoji: '🏋️' },
       { id: 'bike', label: 'Bicycles', emoji: '🚲' },
@@ -207,7 +206,6 @@ function estimateQuote(state: QuoteState): { low: number; high: number } {
   const qty = (id: string) => state.items[id] ?? 0;
   base += 200 * qty('piano');
   base += 150 * qty('pool-table');
-  base += 75 * qty('safe');
   base += 75 * qty('gym');
 
   if (state.services.includes('packing')) base += 300;
@@ -286,7 +284,7 @@ function ItemTile({
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col items-center justify-center rounded-xl border-2 p-3 text-center transition-all cursor-pointer select-none min-h-[80px]
+      className={`relative flex h-24 flex-col items-center justify-center rounded-xl border-2 px-1 text-center transition-all cursor-pointer select-none touch-manipulation active:scale-95
         ${selected
           ? 'border-teal-500 bg-teal-50 shadow-sm'
           : 'border-gray-200 bg-white hover:border-teal-300'}`}
@@ -367,7 +365,7 @@ const VOICE_KEYWORDS: [RegExp, string][] = [
   [/bed/, 'bed-queen'],
   [/sectional/, 'sectional'],
   [/sofa|couch|loveseat/, 'sofa'],
-  [/dresser|chest of drawers|drawers/, 'dresser'],
+  [/dresser|chest of drawers|drawers|safe|gun cabinet|cabinet/, 'dresser'],
   [/desk/, 'desk'],
   [/bookshelf|bookcase|book shelf/, 'bookshelf'],
   [/wardrobe|armoire/, 'wardrobe'],
@@ -377,7 +375,6 @@ const VOICE_KEYWORDS: [RegExp, string][] = [
   [/stove|oven|range/, 'stove'],
   [/tv|television/, 'tv-large'],
   [/piano/, 'piano'],
-  [/safe|gun cabinet/, 'safe'],
   [/grill|patio/, 'patio'],
   [/gym|weights|treadmill|peloton/, 'gym'],
   [/bike|bicycle/, 'bike'],
@@ -1110,7 +1107,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
             {ITEMS_BY_CATEGORY.map(cat => (
               <div key={cat.category} className="mb-5">
                 <h4 className="text-xs font-bold uppercase text-gray-400 mb-2 tracking-wide">{cat.category}</h4>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {cat.items.map(item => (
                     <QtyItemTile
                       key={item.id}
@@ -1135,7 +1132,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
         {/* ── Special / fragile ── */}
         {stepId === 'special' && (
           <StepWrapper title="Anything fragile or special?" subtitle="Tap anything that needs extra care or special handling. Skip if nothing applies.">
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
               {SPECIAL_ITEMS.map(item => (
                 <ItemTile
                   key={item.id}
