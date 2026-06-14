@@ -804,7 +804,7 @@ function SubmittedScreen({
 
 /* ─── Dynamic step sequence ─── */
 type StepId =
-  | 'propertyType' | 'size' | 'originFloor' | 'originElevator' | 'originLocation' | 'originAccess'
+  | 'propertyType' | 'size' | 'originElevator' | 'originLocation' | 'originAccess'
   | 'destLocation' | 'destFloor' | 'destElevator' | 'destAccess'
   | 'items' | 'special' | 'boxes' | 'crew' | 'services'
   | 'date' | 'flexibility' | 'contact';
@@ -817,11 +817,9 @@ const isHouseType = (p: string) => p === 'house' || p === 'townhouse';
 function buildSteps(state: QuoteState): { id: StepId; label: string }[] {
   const out: { id: StepId; label: string }[] = [];
   out.push({ id: 'propertyType', label: 'Property' });
-  out.push({ id: 'size', label: 'Size' });
-  if (state.propertyType && state.propertyType !== 'storage')
-    out.push({ id: 'originFloor', label: isHouseType(state.propertyType) ? 'Stories' : 'Floor' });
   if (FLOORED_TYPES.includes(state.propertyType) && state.origin.floor !== 'Ground / 1st')
     out.push({ id: 'originElevator', label: 'Elevator' });
+  out.push({ id: 'size', label: 'Size' });
   out.push({ id: 'originLocation', label: 'From' });
   out.push({ id: 'originAccess', label: 'From access' });
   out.push({ id: 'destLocation', label: 'To' });
@@ -959,9 +957,9 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
       <div className="mx-auto max-w-2xl px-4 py-8">
         {onWelcome && <WelcomeStep onStart={() => setStepId(steps[0].id)} />}
 
-        {/* ── Property type ── */}
+        {/* ── Property type + floor/stories (same page) ── */}
         {stepId === 'propertyType' && (
-          <StepWrapper title="What are you moving out of?" subtitle="This helps us plan the right crew and equipment.">
+          <StepWrapper title="What are you moving out of?" subtitle="Pick your place — and which floor it's on.">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {PROPERTY_TYPES.map(pt => (
                 <SelectTile
@@ -974,6 +972,40 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                 />
               ))}
             </div>
+
+            {state.propertyType && state.propertyType !== 'storage' && (
+              <div className="mt-6">
+                {isHouseType(state.propertyType) ? (
+                  <>
+                    <label className="block text-xs font-semibold text-gray-500 mb-2">How many stories is it?</label>
+                    <div className="flex flex-wrap gap-2">
+                      {STORY_OPTIONS.map(opt => (
+                        <RadioTile
+                          key={opt.id}
+                          label={opt.label}
+                          selected={state.stories === opt.id}
+                          onClick={() => setState(prev => ({ ...prev, stories: opt.id }))}
+                        />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <label className="block text-xs font-semibold text-gray-500 mb-2">Which floor is your place on?</label>
+                    <div className="flex flex-wrap gap-2">
+                      {FLOORS.map(f => (
+                        <RadioTile
+                          key={f}
+                          label={f}
+                          selected={state.origin.floor === f}
+                          onClick={() => setOrigin({ floor: f, elevator: f === 'Ground / 1st' ? null : state.origin.elevator })}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </StepWrapper>
         )}
 
@@ -996,37 +1028,6 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
               })}
             </div>
           </StepWrapper>
-        )}
-
-        {/* ── Floor / Stories (adaptive) ── */}
-        {stepId === 'originFloor' && (
-          isHouseType(state.propertyType) ? (
-            <StepWrapper title="How many stories is your home?" subtitle="More levels means more stairs for the crew.">
-              <div className="grid grid-cols-1 gap-2">
-                {STORY_OPTIONS.map(opt => (
-                  <RadioTile
-                    key={opt.id}
-                    label={opt.label}
-                    selected={state.stories === opt.id}
-                    onClick={() => setState(prev => ({ ...prev, stories: opt.id }))}
-                  />
-                ))}
-              </div>
-            </StepWrapper>
-          ) : (
-            <StepWrapper title="Which floor is your place on?" subtitle="The higher up without an elevator, the more time the move takes.">
-              <div className="grid grid-cols-1 gap-2">
-                {FLOORS.map(f => (
-                  <RadioTile
-                    key={f}
-                    label={f}
-                    selected={state.origin.floor === f}
-                    onClick={() => setOrigin({ floor: f, elevator: f === 'Ground / 1st' ? null : state.origin.elevator })}
-                  />
-                ))}
-              </div>
-            </StepWrapper>
-          )
         )}
 
         {/* ── Origin elevator ── */}
