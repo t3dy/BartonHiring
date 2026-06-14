@@ -261,7 +261,7 @@ function SelectTile({
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col items-center justify-center rounded-2xl border-2 p-4 text-center transition-all cursor-pointer select-none
+      className={`relative flex flex-col items-center justify-center rounded-2xl border-2 p-4 text-center transition-all cursor-pointer select-none touch-manipulation active:scale-95
         ${selected
           ? 'border-teal-500 bg-teal-50 shadow-md scale-[1.03]'
           : 'border-gray-200 bg-white hover:border-teal-300 hover:bg-teal-50/30'}`}
@@ -302,8 +302,9 @@ function ItemTile({
   );
 }
 
-/* Item tile with a quantity stepper — tap the tile to add one (tap 3× for 3
-   couches); the −/＋ row appears once selected so over-taps are easy to fix. */
+/* Fixed-height item tile so rows stay even (no gaps when a neighbor is
+   selected). Tap the tile to add one — tap 3× for 3 couches. Once selected,
+   a ×N badge shows the count and a corner − removes one. */
 function QtyItemTile({
   emoji, label, qty, onAdd, onRemove,
 }: {
@@ -312,32 +313,28 @@ function QtyItemTile({
   const selected = qty > 0;
   return (
     <div
-      className={`relative flex flex-col items-center justify-between rounded-xl border-2 p-3 text-center transition-all select-none min-h-[96px]
-        ${selected ? 'border-teal-500 bg-teal-50 shadow-sm' : 'border-gray-200 bg-white hover:border-teal-300'}`}
+      className={`relative h-24 rounded-xl border-2 transition-colors select-none touch-manipulation
+        ${selected ? 'border-teal-500 bg-teal-50' : 'border-gray-200 bg-white'}`}
     >
-      {selected && (
-        <div className="absolute top-1.5 right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-500 px-1 text-xs font-bold text-white">
-          ×{qty}
-        </div>
-      )}
-      <button onClick={onAdd} className="flex flex-1 flex-col items-center justify-center cursor-pointer w-full">
-        <span className="text-2xl mb-1">{emoji}</span>
-        <span className={`text-xs font-medium leading-tight ${selected ? 'text-teal-700' : 'text-gray-700'}`}>{label}</span>
+      <button
+        onClick={onAdd}
+        aria-label={`Add ${label}`}
+        className="flex h-full w-full flex-col items-center justify-center gap-1 px-1 active:scale-95 transition-transform"
+      >
+        <span className="text-3xl leading-none">{emoji}</span>
+        <span className={`text-[11px] font-semibold leading-tight text-center ${selected ? 'text-teal-700' : 'text-gray-700'}`}>{label}</span>
       </button>
       {selected && (
-        <div className="mt-2 flex items-center gap-3">
-          <button
-            onClick={onRemove}
-            aria-label={`Remove one ${label}`}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-white border-2 border-teal-300 text-teal-700 font-bold hover:bg-teal-100"
-          >−</button>
-          <span className="text-sm font-bold text-teal-700 w-4">{qty}</span>
-          <button
-            onClick={onAdd}
-            aria-label={`Add one ${label}`}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-600 text-white font-bold hover:bg-teal-700"
-          >＋</button>
-        </div>
+        <span className="absolute top-1 right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-teal-500 px-1 text-[11px] font-bold text-white">
+          ×{qty}
+        </span>
+      )}
+      {selected && (
+        <button
+          onClick={onRemove}
+          aria-label={`Remove one ${label}`}
+          className="absolute top-1 left-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-teal-300 bg-white text-xl leading-none font-bold text-teal-700 hover:bg-teal-100 active:scale-90"
+        >−</button>
       )}
     </div>
   );
@@ -351,7 +348,7 @@ function RadioTile({
   return (
     <button
       onClick={onClick}
-      className={`flex-1 rounded-xl border-2 py-2.5 px-3 text-sm font-semibold transition-all text-center
+      className={`flex-1 min-w-[88px] rounded-xl border-2 py-3 px-3 text-sm font-semibold transition-all text-center touch-manipulation active:scale-95
         ${selected
           ? 'border-teal-500 bg-teal-50 text-teal-700'
           : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
