@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   ChevronLeft, ChevronRight, Check, Phone, ArrowRight, Star, MessageSquare,
 } from 'lucide-react';
-import salamanderImg from './assets/salamander.jpg';
+import salamandarImg from './assets/salamandar.png';
 import { saveQuote } from './quoteStore';
 
 /* ─── Types ─── */
@@ -1176,14 +1176,10 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                   className={`flex flex-col items-center rounded-2xl border-2 overflow-hidden transition-all select-none touch-manipulation active:scale-95
                     ${state.crew === n ? 'border-brand-500 shadow-md scale-[1.03]' : 'border-gray-200 bg-white hover:border-brand-300'}`}
                 >
-                  {/* Salamander image, cropped to hide the text and show just the creatures */}
-                  <div className="w-full overflow-hidden" style={{ height: 72 }}>
-                    <img
-                      src={salamanderImg}
-                      alt=""
-                      className="w-full"
-                      style={{ marginTop: '-28%', display: 'block' }}
-                    />
+                  <div className="flex flex-wrap justify-center items-end gap-0.5 px-1 pt-2 pb-1" style={{ minHeight: 64 }}>
+                    {Array.from({ length: n }).map((_, i) => (
+                      <img key={i} src={salamandarImg} alt="salamander" className="h-10 w-auto" />
+                    ))}
                   </div>
                   <span className={`w-full text-center py-1.5 text-sm font-bold font-heading border-t
                     ${state.crew === n ? 'bg-brand-50 text-brand-700 border-brand-200' : 'bg-white text-gray-800 border-gray-100'}`}>
