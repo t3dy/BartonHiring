@@ -261,16 +261,16 @@ function SelectTile({
       onClick={onClick}
       className={`relative flex flex-col items-center justify-center rounded-2xl border-2 p-4 text-center transition-all cursor-pointer select-none touch-manipulation active:scale-95
         ${selected
-          ? 'border-teal-500 bg-teal-50 shadow-md scale-[1.03]'
-          : 'border-gray-200 bg-white hover:border-teal-300 hover:bg-teal-50/30'}`}
+          ? 'border-brand-500 bg-brand-50 shadow-md scale-[1.03]'
+          : 'border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50/30'}`}
     >
       {selected && (
-        <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500">
+        <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-brand-500">
           <Check className="h-3 w-3 text-white" />
         </div>
       )}
       <span className="text-3xl mb-2">{emoji}</span>
-      <span className={`text-sm font-bold ${selected ? 'text-teal-700' : 'text-gray-800'}`}>{label}</span>
+      <span className={`text-sm font-bold ${selected ? 'text-brand-700' : 'text-gray-800'}`}>{label}</span>
       {desc && <span className="mt-0.5 text-xs text-gray-500">{desc}</span>}
     </button>
   );
@@ -286,16 +286,16 @@ function ItemTile({
       onClick={onClick}
       className={`relative flex h-24 flex-col items-center justify-center rounded-xl border-2 px-1 text-center transition-all cursor-pointer select-none touch-manipulation active:scale-95
         ${selected
-          ? 'border-teal-500 bg-teal-50 shadow-sm'
-          : 'border-gray-200 bg-white hover:border-teal-300'}`}
+          ? 'border-brand-500 bg-brand-50 shadow-sm'
+          : 'border-gray-200 bg-white hover:border-brand-300'}`}
     >
       {selected && (
-        <div className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-teal-500">
+        <div className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500">
           <Check className="h-2.5 w-2.5 text-white" />
         </div>
       )}
       <span className="text-2xl mb-1">{emoji}</span>
-      <span className={`text-xs font-medium leading-tight ${selected ? 'text-teal-700' : 'text-gray-700'}`}>{label}</span>
+      <span className={`text-xs font-medium leading-tight ${selected ? 'text-brand-700' : 'text-gray-700'}`}>{label}</span>
     </button>
   );
 }
@@ -312,7 +312,7 @@ function QtyItemTile({
   return (
     <div
       className={`relative h-24 rounded-xl border-2 transition-colors select-none touch-manipulation
-        ${selected ? 'border-teal-500 bg-teal-50' : 'border-gray-200 bg-white'}`}
+        ${selected ? 'border-brand-500 bg-brand-50' : 'border-gray-200 bg-white'}`}
     >
       <button
         onClick={onAdd}
@@ -320,10 +320,10 @@ function QtyItemTile({
         className="flex h-full w-full flex-col items-center justify-center gap-1 px-1 active:scale-95 transition-transform"
       >
         <span className="text-3xl leading-none">{emoji}</span>
-        <span className={`text-[11px] font-semibold leading-tight text-center ${selected ? 'text-teal-700' : 'text-gray-700'}`}>{label}</span>
+        <span className={`text-[11px] font-semibold leading-tight text-center ${selected ? 'text-brand-700' : 'text-gray-700'}`}>{label}</span>
       </button>
       {selected && (
-        <span className="absolute top-1 right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-teal-500 px-1 text-[11px] font-bold text-white">
+        <span className="absolute top-1 right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand-500 px-1 text-[11px] font-bold text-white">
           ×{qty}
         </span>
       )}
@@ -331,7 +331,7 @@ function QtyItemTile({
         <button
           onClick={onRemove}
           aria-label={`Remove one ${label}`}
-          className="absolute top-1 left-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-teal-300 bg-white text-xl leading-none font-bold text-teal-700 hover:bg-teal-100 active:scale-90"
+          className="absolute top-1 left-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-brand-300 bg-white text-xl leading-none font-bold text-brand-700 hover:bg-brand-100 active:scale-90"
         >−</button>
       )}
     </div>
@@ -348,7 +348,7 @@ function RadioTile({
       onClick={onClick}
       className={`flex-1 min-w-[88px] rounded-xl border-2 py-3 px-3 text-sm font-semibold transition-all text-center touch-manipulation active:scale-95
         ${selected
-          ? 'border-teal-500 bg-teal-50 text-teal-700'
+          ? 'border-brand-500 bg-brand-50 text-brand-700'
           : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
     >
       {label}
@@ -418,14 +418,14 @@ function VoiceItemsButton({ onMatches }: { onMatches: (ids: string[]) => void })
   };
 
   return (
-    <div className="mb-4 rounded-2xl border-2 border-dashed border-teal-200 bg-teal-50/40 p-3 text-center">
+    <div className="mb-4 rounded-2xl border-2 border-dashed border-brand-200 bg-brand-50/40 p-3 text-center">
       <button
         onClick={start}
         disabled={listening}
         className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all
           ${listening
             ? 'bg-rose-100 text-rose-600 animate-pulse'
-            : 'bg-teal-600 text-white hover:bg-teal-700'}`}
+            : 'bg-brand-600 text-white hover:bg-brand-700'}`}
       >
         {listening ? '🎙️ Listening… say your items!' : '🎤 Or just say what you have'}
       </button>
@@ -465,16 +465,16 @@ function TownPicker({
               onClick={() => onSelect(t.id)}
               className={`relative flex flex-col items-center justify-center rounded-2xl border-2 text-center transition-all cursor-pointer select-none ${s.tile}
                 ${selected
-                  ? 'border-teal-500 bg-teal-50 shadow-md scale-[1.03]'
-                  : 'border-gray-200 bg-white hover:border-teal-300 hover:bg-teal-50/30'}`}
+                  ? 'border-brand-500 bg-brand-50 shadow-md scale-[1.03]'
+                  : 'border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50/30'}`}
             >
               {selected && (
-                <div className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-teal-500">
+                <div className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500">
                   <Check className="h-2.5 w-2.5 text-white" />
                 </div>
               )}
               <span className={`${s.emoji} mb-1`}>{t.emoji}</span>
-              <span className={`${s.label} leading-tight ${selected ? 'text-teal-700' : 'text-gray-800'}`}>{t.label}</span>
+              <span className={`${s.label} leading-tight ${selected ? 'text-brand-700' : 'text-gray-800'}`}>{t.label}</span>
             </button>
           );
         })}
@@ -482,8 +482,8 @@ function TownPicker({
           onClick={() => onSelect('custom')}
           className={`col-span-2 sm:col-span-4 flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-3 text-sm font-semibold transition-all
             ${value === 'custom'
-              ? 'border-teal-500 bg-teal-50 text-teal-700'
-              : 'border-gray-300 bg-white text-gray-500 hover:border-teal-300'}`}
+              ? 'border-brand-500 bg-brand-50 text-brand-700'
+              : 'border-gray-300 bg-white text-gray-500 hover:border-brand-300'}`}
         >
           ✏️ Somewhere else
         </button>
@@ -495,7 +495,7 @@ function TownPicker({
           onChange={e => onCustomChange(e.target.value)}
           placeholder="Wimberley, Dripping Springs, Bastrop…"
           autoFocus
-          className="mt-2 w-full rounded-xl border-2 border-teal-200 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
+          className="mt-2 w-full rounded-xl border-2 border-brand-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none"
         />
       )}
     </div>
@@ -536,7 +536,7 @@ function OptionalAddress({ access, onChange }: { access: AccessInfo; onChange: (
           value={access.address}
           onChange={e => onChange({ ...access, address: e.target.value })}
           placeholder="123 Main St, Austin TX"
-          className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
+          className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none"
         />
       </div>
       <div>
@@ -546,7 +546,7 @@ function OptionalAddress({ access, onChange }: { access: AccessInfo; onChange: (
           value={access.zip}
           onChange={e => onChange({ ...access, zip: e.target.value })}
           placeholder="78701"
-          className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
+          className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none"
         />
       </div>
     </div>
@@ -579,7 +579,7 @@ function AccessBundle({ access, onChange }: { access: AccessInfo; onChange: (a: 
           type="checkbox"
           checked={access.narrowHallways}
           onChange={e => onChange({ ...access, narrowHallways: e.target.checked })}
-          className="h-5 w-5 rounded accent-teal-600"
+          className="h-5 w-5 rounded accent-brand-600"
         />
         <span className="text-sm text-gray-700">Narrow hallways or tight corners to navigate</span>
       </label>
@@ -589,7 +589,7 @@ function AccessBundle({ access, onChange }: { access: AccessInfo; onChange: (a: 
           type="checkbox"
           checked={access.coiRequired}
           onChange={e => onChange({ ...access, coiRequired: e.target.checked })}
-          className="h-5 w-5 rounded accent-teal-600"
+          className="h-5 w-5 rounded accent-brand-600"
         />
         <div>
           <span className="text-sm text-gray-700">Building requires a Certificate of Insurance (COI)</span>
@@ -605,7 +605,7 @@ function StepWrapper({ title, subtitle, children }: { title: string; subtitle: s
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+        <h2 className="text-2xl font-bold text-gray-900 font-heading">{title}</h2>
         <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
       </div>
       {children}
@@ -618,24 +618,24 @@ function WelcomeStep({ onStart }: { onStart: () => void }) {
   return (
     <div className="text-center py-8">
       <div className="text-6xl mb-4">🚚</div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-3">Let's Plan Your Move</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-3 font-heading">Let's Plan Your Move</h1>
       <p className="text-gray-500 text-lg mb-2 max-w-md mx-auto">
         Answer a few quick questions and we'll put together a personalized quote — then give you a call to confirm everything.
       </p>
-      <div className="flex items-center justify-center gap-1.5 text-sm text-teal-600 font-semibold mb-8">
-        <Star className="h-4 w-4 fill-teal-500" />
+      <div className="flex items-center justify-center gap-1.5 text-sm text-brand-600 font-semibold mb-8">
+        <Star className="h-4 w-4 fill-brand-500" />
         <span>100+ 5-star reviews · Austin's boutique moving team</span>
       </div>
       <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
         <button
           onClick={onStart}
-          className="inline-flex items-center gap-2 rounded-2xl bg-teal-600 px-10 py-4 text-lg font-bold text-white shadow-lg hover:bg-teal-700 hover:scale-105 transition-all"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-10 py-4 text-lg font-bold text-white shadow-lg hover:bg-brand-700 hover:scale-105 transition-all font-heading"
         >
           Build My Quote <ArrowRight className="h-5 w-5" />
         </button>
         <a
           href="tel:5125555555"
-          className="inline-flex items-center gap-2 rounded-2xl border-2 border-teal-200 bg-white px-8 py-4 text-lg font-bold text-teal-700 hover:border-teal-400 hover:bg-teal-50 transition-all"
+          className="inline-flex items-center gap-2 rounded-lg border-2 border-brand-300 bg-white px-8 py-4 text-lg font-bold text-brand-600 hover:border-brand-500 hover:bg-brand-50 transition-all font-heading"
         >
           <Phone className="h-5 w-5" /> …or just give us a call
         </a>
@@ -681,7 +681,7 @@ function SubmittedScreen({
   const promo = PROMOS[state.promoCode.trim().toUpperCase()];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-brand-50 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-50 flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">🎉</div>
@@ -696,7 +696,7 @@ function SubmittedScreen({
 
         {/* Cartoon move strip — your stuff rolling to your new place */}
         {(moveEmojis.length > 0 || state.crew > 0) && (
-          <div className="rounded-2xl border border-teal-100 bg-white shadow-sm p-4 mb-4 text-center overflow-hidden">
+          <div className="rounded-2xl border border-brand-100 bg-white shadow-sm p-4 mb-4 text-center overflow-hidden">
             <p className="text-xs font-bold uppercase text-gray-400 mb-2">Your move at a glance</p>
             <p className="text-2xl leading-relaxed break-words">
               🚚💨 {moveEmojis.join(' ')} {boxEmoji && boxEmoji !== '🙅' ? boxEmoji : ''} ➡️ {propEmoji}
@@ -709,8 +709,8 @@ function SubmittedScreen({
           </div>
         )}
 
-        <div className="rounded-2xl border border-teal-100 bg-white shadow-md overflow-hidden mb-6">
-          <div className="bg-gradient-to-r from-teal-600 to-brand-600 px-5 py-4 text-white">
+        <div className="rounded-2xl border border-brand-100 bg-white shadow-md overflow-hidden mb-6">
+          <div className="bg-gradient-to-r from-brand-600 to-brand-600 px-5 py-4 text-white">
             <p className="text-xs font-bold uppercase opacity-75">Your Move Summary</p>
             <p className="text-xl font-bold mt-1">
               {propLabel}{sizeLabel ? ` · ${sizeLabel}` : ''}
@@ -754,33 +754,33 @@ function SubmittedScreen({
               </div>
             )}
           </div>
-          <div className="bg-teal-50 border-t border-teal-100 px-5 py-4">
-            <p className="text-xs text-teal-600 font-bold uppercase">Estimated Range</p>
-            <p className="text-2xl font-bold text-teal-700">${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}</p>
+          <div className="bg-brand-50 border-t border-brand-100 px-5 py-4">
+            <p className="text-xs text-brand-600 font-bold uppercase">Estimated Range</p>
+            <p className="text-2xl font-bold text-brand-700">${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}</p>
             {promo && (
               <p className="text-xs font-bold text-emerald-600 mt-0.5">🎟️ {promo.label} included</p>
             )}
-            <p className="text-xs text-teal-600 mt-1">We'll nail down the exact number on your call.</p>
+            <p className="text-xs text-brand-600 mt-1">We'll nail down the exact number on your call.</p>
           </div>
         </div>
 
         <div className="rounded-2xl bg-white border border-gray-200 p-5 mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <MessageSquare className="h-5 w-5 text-teal-600" />
+            <MessageSquare className="h-5 w-5 text-brand-600" />
             <p className="font-bold text-gray-900">What happens next?</p>
           </div>
           <ol className="space-y-2 text-sm text-gray-600">
-            <li className="flex gap-2"><span className="font-bold text-teal-600">1.</span> We review your move details today</li>
-            <li className="flex gap-2"><span className="font-bold text-teal-600">2.</span> You get a personal call from our team (usually within 2 hours during business hours)</li>
-            <li className="flex gap-2"><span className="font-bold text-teal-600">3.</span> We answer your questions and confirm your quote</li>
-            <li className="flex gap-2"><span className="font-bold text-teal-600">4.</span> Book your date — and we handle the rest!</li>
+            <li className="flex gap-2"><span className="font-bold text-brand-600">1.</span> We review your move details today</li>
+            <li className="flex gap-2"><span className="font-bold text-brand-600">2.</span> You get a personal call from our team (usually within 2 hours during business hours)</li>
+            <li className="flex gap-2"><span className="font-bold text-brand-600">3.</span> We answer your questions and confirm your quote</li>
+            <li className="flex gap-2"><span className="font-bold text-brand-600">4.</span> Book your date — and we handle the rest!</li>
           </ol>
         </div>
 
         <div className="flex flex-col gap-3">
           <a
             href="tel:5125555555"
-            className="flex items-center justify-center gap-2 rounded-xl bg-teal-600 py-3.5 font-bold text-white hover:bg-teal-700 transition-colors"
+            className="flex items-center justify-center gap-2 rounded-lg bg-brand-500 py-3.5 font-bold text-white hover:bg-brand-700 transition-colors font-heading"
           >
             <Phone className="h-4 w-4" /> Call Us Now: (512) 555-5555
           </a>
@@ -908,7 +908,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-brand-50">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-50">
       {/* Sticky header */}
       <div className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
@@ -925,7 +925,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
           <span className="text-sm font-bold text-gray-900">Barton Springs Moving</span>
           <a
             href="tel:5125555555"
-            className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700"
+            className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-brand-700 font-heading"
           >
             <Phone className="h-3 w-3" /> Call Us
           </a>
@@ -935,11 +935,11 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
           <div className="mx-auto max-w-2xl px-4 pb-3">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs text-gray-400 font-medium">Step {idx + 1} of {total} — {current.label}</span>
-              <span className="text-xs text-teal-600 font-semibold">{Math.round(((idx + 1) / total) * 100)}%</span>
+              <span className="text-xs text-brand-600 font-semibold">{Math.round(((idx + 1) / total) * 100)}%</span>
             </div>
             <div className="h-1.5 w-full rounded-full bg-gray-100">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-teal-500 to-brand-500 transition-all duration-500"
+                className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600 transition-all duration-500"
                 style={{ width: `${((idx + 1) / total) * 100}%` }}
               />
             </div>
@@ -1122,7 +1122,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
               </div>
             ))}
             {itemCount > 0 && (
-              <p className="text-xs text-teal-600 font-semibold text-center mt-2">
+              <p className="text-xs text-brand-600 font-semibold text-center mt-2">
                 {itemCount} item{itemCount !== 1 ? 's' : ''} on the truck 🚚
               </p>
             )}
@@ -1173,10 +1173,10 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                   key={n}
                   onClick={() => setState(prev => ({ ...prev, crew: n }))}
                   className={`flex flex-col items-center justify-center rounded-2xl border-2 p-3 transition-all
-                    ${state.crew === n ? 'border-teal-500 bg-teal-50 shadow-md scale-[1.03]' : 'border-gray-200 bg-white hover:border-teal-300'}`}
+                    ${state.crew === n ? 'border-brand-500 bg-brand-50 shadow-md scale-[1.03]' : 'border-gray-200 bg-white hover:border-brand-300'}`}
                 >
                   <span className="text-lg leading-tight">{'🦎'.repeat(n > 3 ? 3 : n)}{n > 3 ? <span className="block">{'🦎'.repeat(n - 3)}</span> : null}</span>
-                  <span className={`mt-1 text-sm font-bold ${state.crew === n ? 'text-teal-700' : 'text-gray-800'}`}>{n}</span>
+                  <span className={`mt-1 text-sm font-bold ${state.crew === n ? 'text-brand-700' : 'text-gray-800'}`}>{n}</span>
                 </button>
               ))}
             </div>
@@ -1197,7 +1197,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
               </div>
             )}
             {state.crew > recommendedCrew(state) && (
-              <p className="mt-4 text-xs text-teal-600 font-medium">
+              <p className="mt-4 text-xs text-brand-600 font-medium">
                 ⚡ Extra hands finish faster — adds a little to the estimate, saves you hours on move day.
               </p>
             )}
@@ -1213,14 +1213,14 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                   key={svc.id}
                   onClick={() => toggleSet(svc.id, 'services')}
                   className={`flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-all
-                    ${state.services.includes(svc.id) ? 'border-teal-500 bg-teal-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                    ${state.services.includes(svc.id) ? 'border-brand-500 bg-brand-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
                 >
                   <span className="text-2xl shrink-0">{svc.emoji}</span>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-bold ${state.services.includes(svc.id) ? 'text-teal-700' : 'text-gray-800'}`}>{svc.label}</p>
+                    <p className={`text-sm font-bold ${state.services.includes(svc.id) ? 'text-brand-700' : 'text-gray-800'}`}>{svc.label}</p>
                     <p className="text-xs text-gray-500">{svc.desc}</p>
                   </div>
-                  {state.services.includes(svc.id) && <Check className="h-4 w-4 text-teal-500 shrink-0" />}
+                  {state.services.includes(svc.id) && <Check className="h-4 w-4 text-brand-500 shrink-0" />}
                 </button>
               ))}
             </div>
@@ -1234,7 +1234,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
               type="date"
               value={state.moveDate}
               onChange={e => setState(prev => ({ ...prev, moveDate: e.target.value }))}
-              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-base focus:border-teal-500 focus:outline-none"
+              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-base focus:border-brand-500 focus:outline-none"
             />
           </StepWrapper>
         )}
@@ -1271,7 +1271,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                     value={state.firstName}
                     onChange={e => setState(prev => ({ ...prev, firstName: e.target.value }))}
                     placeholder="Jane"
-                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
+                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -1281,7 +1281,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                     value={state.lastName}
                     onChange={e => setState(prev => ({ ...prev, lastName: e.target.value }))}
                     placeholder="Smith"
-                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
+                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -1293,7 +1293,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                     value={state.phone}
                     onChange={e => setState(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="(512) 555-1234"
-                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
+                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -1303,7 +1303,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                     value={state.email}
                     onChange={e => setState(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="jane@example.com"
-                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none"
+                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -1318,13 +1318,13 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                   onChange={e => setState(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder="Tight street parking, a fragile grandfather clock, or just say hi — whatever's on your mind."
                   rows={3}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:outline-none resize-none"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none resize-none"
                 />
               </div>
 
               <div>
                 {!promoOpen && !state.promoCode ? (
-                  <button onClick={() => setPromoOpen(true)} className="text-xs font-semibold text-teal-600 underline">
+                  <button onClick={() => setPromoOpen(true)} className="text-xs font-semibold text-brand-600 underline">
                     🎟️ Live in a partner building? Enter your code
                   </button>
                 ) : (
@@ -1335,7 +1335,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
                       value={state.promoCode}
                       onChange={e => setState(prev => ({ ...prev, promoCode: e.target.value.toUpperCase() }))}
                       placeholder="ONTHELAKE5"
-                      className="w-full sm:w-64 rounded-xl border border-gray-300 px-4 py-2.5 text-sm uppercase tracking-wide focus:border-teal-500 focus:outline-none"
+                      className="w-full sm:w-64 rounded-xl border border-gray-300 px-4 py-2.5 text-sm uppercase tracking-wide focus:border-brand-500 focus:outline-none"
                     />
                     {PROMOS[state.promoCode.trim().toUpperCase()] && (
                       <p className="mt-1.5 text-xs font-bold text-emerald-600">
@@ -1350,8 +1350,8 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
               </div>
 
               {state.size && (
-                <div className="rounded-2xl bg-gradient-to-br from-teal-50 to-brand-50 border border-teal-100 p-4">
-                  <p className="text-xs font-bold uppercase text-teal-600 mb-1">Your Estimated Range</p>
+                <div className="rounded-2xl bg-gradient-to-br from-brand-50 to-brand-50 border border-brand-100 p-4">
+                  <p className="text-xs font-bold uppercase text-brand-600 mb-1">Your Estimated Range</p>
                   <p className="text-2xl font-bold text-gray-900">${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     This is a ballpark based on your selections. The real quote comes from your personal call.
@@ -1375,8 +1375,8 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
             <button
               onClick={goNext}
               disabled={!canAdvance}
-              className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white transition-all
-                ${canAdvance ? 'bg-teal-600 hover:bg-teal-700 shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+              className={`flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-bold text-white transition-all font-heading
+                ${canAdvance ? 'bg-brand-500 hover:bg-brand-700 shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             >
               {isLast ? <>Send My Info <ArrowRight className="h-4 w-4" /></> : <>Continue <ChevronRight className="h-4 w-4" /></>}
             </button>
@@ -1387,7 +1387,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
         {current && !isLast && (
           <p className="mt-4 text-center text-xs text-gray-400">
             Prefer to just talk?{' '}
-            <a href="tel:5125555555" className="text-teal-600 font-semibold underline">
+            <a href="tel:5125555555" className="text-brand-600 font-semibold underline">
               Call us directly →
             </a>
           </p>
