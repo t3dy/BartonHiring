@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   ChevronLeft, ChevronRight, Check, Phone, ArrowRight, Star, MessageSquare,
 } from 'lucide-react';
+import salamanderImg from './assets/salamander.jpg';
 import { saveQuote } from './quoteStore';
 
 /* ─── Types ─── */
@@ -703,7 +704,7 @@ function SubmittedScreen({
             </p>
             {state.crew > 0 && (
               <p className="mt-1 text-sm text-gray-500">
-                Carried by your {state.crew} salamanders: {'🦎'.repeat(state.crew)}
+                Carried by your {state.crew} salamanders 🦎
               </p>
             )}
           </div>
@@ -1166,17 +1167,28 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
 
         {/* ── Crew (salamanders) ── */}
         {stepId === 'crew' && (
-          <StepWrapper title="Pick your salamanders 🦎" subtitle={`Our movers. For a move like yours we recommend ${recommendedCrew(state)}.`}>
+          <StepWrapper title="Pick your salamanders" subtitle={`Our movers. For a move like yours we recommend ${recommendedCrew(state)}.`}>
             <div className="grid grid-cols-4 gap-2">
               {[2, 3, 4, 5].map(n => (
                 <button
                   key={n}
                   onClick={() => setState(prev => ({ ...prev, crew: n }))}
-                  className={`flex flex-col items-center justify-center rounded-2xl border-2 p-3 transition-all
-                    ${state.crew === n ? 'border-brand-500 bg-brand-50 shadow-md scale-[1.03]' : 'border-gray-200 bg-white hover:border-brand-300'}`}
+                  className={`flex flex-col items-center rounded-2xl border-2 overflow-hidden transition-all select-none touch-manipulation active:scale-95
+                    ${state.crew === n ? 'border-brand-500 shadow-md scale-[1.03]' : 'border-gray-200 bg-white hover:border-brand-300'}`}
                 >
-                  <span className="text-lg leading-tight">{'🦎'.repeat(n > 3 ? 3 : n)}{n > 3 ? <span className="block">{'🦎'.repeat(n - 3)}</span> : null}</span>
-                  <span className={`mt-1 text-sm font-bold ${state.crew === n ? 'text-brand-700' : 'text-gray-800'}`}>{n}</span>
+                  {/* Salamander image, cropped to hide the text and show just the creatures */}
+                  <div className="w-full overflow-hidden" style={{ height: 72 }}>
+                    <img
+                      src={salamanderImg}
+                      alt=""
+                      className="w-full"
+                      style={{ marginTop: '-28%', display: 'block' }}
+                    />
+                  </div>
+                  <span className={`w-full text-center py-1.5 text-sm font-bold font-heading border-t
+                    ${state.crew === n ? 'bg-brand-50 text-brand-700 border-brand-200' : 'bg-white text-gray-800 border-gray-100'}`}>
+                    {n} movers
+                  </span>
                 </button>
               ))}
             </div>
@@ -1184,7 +1196,7 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
             {state.crew > 0 && state.crew < recommendedCrew(state) && (
               <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
                 <p className="text-sm text-amber-800">
-                  🦎💦 Whoa — with only {state.crew} salamander{state.crew > 1 ? 's' : ''}, this move could take a <em>really</em> long time
+                  💦 Whoa — with only {state.crew} salamander{state.crew > 1 ? 's' : ''}, this move could take a <em>really</em> long time
                   {(state.items['piano'] ?? 0) > 0 ? ' (and someone has to carry that piano!)' : ''}.
                   We recommend <strong>{recommendedCrew(state)}</strong> for a move like yours.
                 </p>
