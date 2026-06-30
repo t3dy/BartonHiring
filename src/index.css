@@ -13,11 +13,13 @@
   --color-brand-800: #013e6e;
   --color-brand-900: #012d55;
 
-  --font-heading: 'Barlow Semi Condensed', sans-serif;
-  --font-body: 'Roboto', sans-serif;
 }
 
 body {
-  font-family: var(--font-body);
+  font-family: 'Roboto', sans-serif;
   color: #4B4F58;
+}
+
+.font-heading {
+  font-family: 'Barlow Semi Condensed', sans-serif;
 }
