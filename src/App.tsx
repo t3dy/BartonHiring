@@ -4,11 +4,12 @@ import {
   DollarSign, Clock, Search, MessageSquare,
   FileText, GraduationCap, Heart, BarChart3, Megaphone, Calculator,
   Star, TrendingUp, AlertTriangle, Zap, Monitor, Smartphone, Globe,
-  Layers, BriefcaseBusiness, Truck
+  Layers, BriefcaseBusiness, Truck, ListChecks, Wrench
 } from 'lucide-react';
 import { useState } from 'react';
 import QuoteWizard from './QuoteWizard';
 import AdminDashboard from './AdminDashboard';
+import { playbooks, type PlaybookStep } from './playbooks';
 
 /* ─── Types ─── */
 interface SoftwareSolution {
@@ -1112,13 +1113,135 @@ function ToolCard({ tool, isCustom }: { tool: ToolInfo; isCustom?: boolean }) {
   );
 }
 
-/* ─── Action Card Component ─── */
-function ActionCard({ a }: { a: HiringAction }) {
-  const [expanded, setExpanded] = useState(false);
+/* ─── Collapsible sub-section (level 2 of the accordion) ─── */
+function SubSection({
+  sectionId, icon, title, badge, open, onToggle, children,
+}: {
+  sectionId: string;
+  icon: React.ReactNode;
+  title: string;
+  badge?: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={sectionId}
+        className="flex w-full items-center gap-2 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
+      >
+        <span className="text-gray-500">{icon}</span>
+        <span className="flex-1 text-sm font-semibold text-gray-800">{title}</span>
+        {badge && (
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">{badge}</span>
+        )}
+        <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <div id={sectionId} className="border-t border-gray-100 px-3 py-3">{children}</div>}
+    </div>
+  );
+}
+
+/* ─── Step-by-step playbook (level 3: expandable, checkable steps) ─── */
+function Playbook({ actionId, steps }: { actionId: string; steps: PlaybookStep[] }) {
+  const storageKey = `bsm-playbook-${actionId}`;
+  const [done, setDone] = useState<boolean[]>(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      const arr: unknown = raw ? JSON.parse(raw) : [];
+      return steps.map((_, i) => Array.isArray(arr) && arr[i] === true);
+    } catch {
+      return steps.map(() => false);
+    }
+  });
+  const [openStep, setOpenStep] = useState<number | null>(null);
+
+  const toggleDone = (i: number) => {
+    const next = done.map((d, j) => (j === i ? !d : d));
+    setDone(next);
+    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* private mode */ }
+  };
+
+  const doneCount = done.filter(Boolean).length;
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      <div className="p-5">
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <div className="h-1.5 flex-1 rounded-full bg-gray-100 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-brand-500 transition-all"
+            style={{ width: `${steps.length ? (doneCount / steps.length) * 100 : 0}%` }}
+          />
+        </div>
+        <span className="text-xs font-medium text-gray-500">{doneCount}/{steps.length} done</span>
+      </div>
+      <ol className="space-y-1.5">
+        {steps.map((s, i) => {
+          const stepOpen = openStep === i;
+          return (
+            <li key={s.title} className={`rounded-lg border ${done[i] ? 'border-brand-100 bg-brand-50/40' : 'border-gray-100'}`}>
+              <div className="flex items-center gap-2.5 px-3 py-2">
+                <input
+                  type="checkbox"
+                  checked={done[i]}
+                  onChange={() => toggleDone(i)}
+                  aria-label={`Mark step done: ${s.title}`}
+                  className="h-4 w-4 shrink-0 rounded accent-brand-600 cursor-pointer"
+                />
+                <button
+                  onClick={() => setOpenStep(stepOpen ? null : i)}
+                  aria-expanded={stepOpen}
+                  className="flex flex-1 items-center gap-2 text-left"
+                >
+                  <span className={`flex-1 text-sm font-medium ${done[i] ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                    <span className="mr-1.5 font-semibold text-gray-400">{i + 1}.</span>
+                    {s.title}
+                  </span>
+                  <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform ${stepOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+              {stepOpen && (
+                <div className="border-t border-gray-100 py-2.5 pl-10 pr-3 space-y-2">
+                  <p className="text-sm leading-relaxed text-gray-600">{s.detail}</p>
+                  {s.tip && (
+                    <p className="rounded-md border border-amber-100 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800">
+                      <span className="font-semibold">Pro tip:</span> {s.tip}
+                    </p>
+                  )}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+/* ─── Action Card Component (level 1 of the accordion) ─── */
+function ActionCard({ a, expanded, onToggle }: { a: HiringAction; expanded: boolean; onToggle: () => void }) {
+  const steps = playbooks[a.id];
+  const sectionKeys = [
+    ...(steps ? ['playbook'] : []),
+    'overview',
+    'software',
+    ...(a.advertisingMethods && a.advertisingMethods.length > 0 ? ['advertising'] : []),
+    ...(a.customBuildOption ? ['custom'] : []),
+  ];
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ playbook: true });
+
+  const toggleSection = (key: string) =>
+    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+  const allOpen = sectionKeys.every(k => openSections[k]);
+  const setAll = (open: boolean) =>
+    setOpenSections(Object.fromEntries(sectionKeys.map(k => [k, open])));
+
+  return (
+    <div id={a.id} className="scroll-mt-20 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <button onClick={onToggle} aria-expanded={expanded} className="block w-full p-5 text-left hover:bg-gray-50/60 transition-colors">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -1126,6 +1249,11 @@ function ActionCard({ a }: { a: HiringAction }) {
               <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${priorityColor(a.priority)}`}>
                 {priorityLabel(a.priority)}
               </span>
+              {steps && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 border border-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
+                  <ListChecks className="h-3 w-3" /> {steps.length}-step playbook
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-600 line-clamp-2">{a.description}</p>
           </div>
@@ -1133,36 +1261,61 @@ function ActionCard({ a }: { a: HiringAction }) {
             <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
               <Clock className="h-3 w-3" /> {a.timeToImplement}
             </span>
+            <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
           </div>
         </div>
-      </div>
-
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-center gap-1 border-t border-gray-100 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50/50 transition-colors"
-      >
-        {expanded ? <>Less detail <ChevronUp className="h-4 w-4" /></> : <>More detail <ChevronDown className="h-4 w-4" /></>}
       </button>
 
       {expanded && (
-        <div className="border-t border-gray-100 px-5 py-4 space-y-4">
-          {/* Full description */}
-          <div>
-            <p className="text-xs font-semibold uppercase text-gray-400 mb-1">Full Details</p>
-            <p className="text-sm text-gray-700">{a.description}</p>
+        <div className="border-t border-gray-100 bg-gray-50/50 px-4 py-3 space-y-2">
+          <div className="flex justify-end">
+            <button
+              onClick={() => setAll(!allOpen)}
+              className="text-xs font-medium text-brand-600 hover:text-brand-700"
+            >
+              {allOpen ? 'Collapse all sections' : 'Expand all sections'}
+            </button>
           </div>
 
-          {/* Current method */}
-          <div className="rounded-lg bg-amber-50 border border-amber-100 p-3">
-            <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 mb-1">
-              <AlertTriangle className="h-3.5 w-3.5" /> How you probably do it now
-            </p>
-            <p className="text-sm text-amber-800">{a.currentMethod}</p>
-          </div>
+          {steps && (
+            <SubSection
+              sectionId={`${a.id}-playbook`}
+              icon={<ListChecks className="h-4 w-4" />}
+              title="Step-by-Step Playbook"
+              badge={`${steps.length} steps`}
+              open={!!openSections.playbook}
+              onToggle={() => toggleSection('playbook')}
+            >
+              <Playbook actionId={a.id} steps={steps} />
+            </SubSection>
+          )}
 
-          {/* Software solutions */}
-          <div>
-            <p className="text-xs font-semibold uppercase text-gray-400 mb-2">Software Solutions</p>
+          <SubSection
+            sectionId={`${a.id}-overview`}
+            icon={<FileText className="h-4 w-4" />}
+            title="Why It Matters & Where You Are"
+            open={!!openSections.overview}
+            onToggle={() => toggleSection('overview')}
+          >
+            <div className="space-y-3">
+              <p className="text-sm leading-relaxed text-gray-700">{a.description}</p>
+              <div className="rounded-lg bg-amber-50 border border-amber-100 p-3">
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 mb-1">
+                  <AlertTriangle className="h-3.5 w-3.5" /> How you probably do it now
+                </p>
+                <p className="text-sm text-amber-800">{a.currentMethod}</p>
+              </div>
+            </div>
+          </SubSection>
+
+          <SubSection
+            sectionId={`${a.id}-software`}
+            icon={<Wrench className="h-4 w-4" />}
+            title="Software Options"
+            badge={`${a.softwareSolutions.length}`}
+            open={!!openSections.software}
+            onToggle={() => toggleSection('software')}
+          >
             <div className="flex flex-wrap gap-2">
               {a.softwareSolutions.map(s => (
                 <span key={s.name} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ${fitColor(s.fit)}`}>
@@ -1170,12 +1323,17 @@ function ActionCard({ a }: { a: HiringAction }) {
                 </span>
               ))}
             </div>
-          </div>
+          </SubSection>
 
-          {/* Advertising methods */}
           {a.advertisingMethods && a.advertisingMethods.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold uppercase text-gray-400 mb-2">Advertising Methods</p>
+            <SubSection
+              sectionId={`${a.id}-advertising`}
+              icon={<Megaphone className="h-4 w-4" />}
+              title="Advertising Channels"
+              badge={`${a.advertisingMethods.length}`}
+              open={!!openSections.advertising}
+              onToggle={() => toggleSection('advertising')}
+            >
               <div className="space-y-1.5">
                 {a.advertisingMethods.map(ad => (
                   <div key={ad.method} className="flex items-center gap-2 text-sm text-gray-700">
@@ -1186,17 +1344,21 @@ function ActionCard({ a }: { a: HiringAction }) {
                   </div>
                 ))}
               </div>
-            </div>
+            </SubSection>
           )}
 
-          {/* Custom build option */}
           {a.customBuildOption && (
-            <div className="rounded-lg bg-brand-50 border border-brand-100 p-3">
-              <p className="flex items-center gap-1.5 text-xs font-semibold text-brand-700 mb-1">
-                <Zap className="h-3.5 w-3.5" /> Custom Build Option
-              </p>
-              <p className="text-sm text-gray-700">{a.customBuildOption}</p>
-            </div>
+            <SubSection
+              sectionId={`${a.id}-custom`}
+              icon={<Zap className="h-4 w-4" />}
+              title="Custom Build Option"
+              open={!!openSections.custom}
+              onToggle={() => toggleSection('custom')}
+            >
+              <div className="rounded-lg bg-brand-50 border border-brand-100 p-3">
+                <p className="text-sm text-gray-700">{a.customBuildOption}</p>
+              </div>
+            </SubSection>
           )}
         </div>
       )}
@@ -1208,6 +1370,16 @@ function ActionCard({ a }: { a: HiringAction }) {
 function StageSection({ stage, index }: { stage: PipelineStage; index: number }) {
   const Icon = stage.icon;
   const mustHaveCount = stage.actions.filter(a => a.priority === 'must-have').length;
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const allOpen = expandedIds.size === stage.actions.length;
+
+  const toggleAction = (id: string) =>
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   return (
     <section id={stage.id} className="scroll-mt-16">
@@ -1215,13 +1387,19 @@ function StageSection({ stage, index }: { stage: PipelineStage; index: number })
         <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${stage.color} text-white shadow-md`}>
           <Icon className="h-7 w-7" />
         </div>
-        <div>
+        <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold text-gray-400">Stage {index + 1}</span>
             <h3 className="text-xl font-bold text-gray-900">{stage.name}</h3>
             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
               {stage.actions.length} actions &middot; {mustHaveCount} must-have
             </span>
+            <button
+              onClick={() => setExpandedIds(allOpen ? new Set() : new Set(stage.actions.map(a => a.id)))}
+              className="ml-auto text-xs font-medium text-brand-600 hover:text-brand-700"
+            >
+              {allOpen ? 'Collapse all' : 'Expand all'}
+            </button>
           </div>
           <p className="mt-1 text-sm text-gray-500">{stage.tagline}</p>
         </div>
@@ -1229,7 +1407,7 @@ function StageSection({ stage, index }: { stage: PipelineStage; index: number })
 
       <div className="space-y-3 ml-0 sm:ml-[4.5rem]">
         {stage.actions.map(a => (
-          <ActionCard key={a.id} a={a} />
+          <ActionCard key={a.id} a={a} expanded={expandedIds.has(a.id)} onToggle={() => toggleAction(a.id)} />
         ))}
       </div>
     </section>
@@ -1377,7 +1555,7 @@ export default function App() {
           <span className="bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent">Hiring Movers</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-brand-200">
-          {totalActions} actions mapped across {stages.length} stages of the hiring pipeline — each paired with software tools, advertising methods, and cost estimates.
+          {totalActions} actions mapped across {stages.length} stages of the hiring pipeline — each with a step-by-step playbook you can check off, plus software tools, advertising methods, and cost estimates.
         </p>
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <a href="#pipeline" className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 font-semibold text-brand-700 shadow-lg hover:scale-105 transition-transform">
