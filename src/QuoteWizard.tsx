@@ -869,21 +869,26 @@ export default function QuoteWizard({ onBack, standalone }: { onBack?: () => voi
 
   const itemCount = Object.values(state.items).reduce((a, b) => a + b, 0);
 
-  const submit = () => {
-    saveQuote({
-      firstName: state.firstName, lastName: state.lastName,
-      phone: state.phone, email: state.email,
-      propertyType: state.propertyType, size: state.size,
-      stories: state.stories,
-      origin: state.origin, destination: state.destination,
-      items: state.items, specialItems: state.specialItems,
-      services: state.services,
-      boxes: state.boxes, crew: state.crew, promoCode: state.promoCode,
-      moveDate: state.moveDate, flexibility: state.flexibility,
-      notes: state.notes,
-      estimateLow: estimate.low, estimateHigh: estimate.high,
-    });
-    setSubmitted(true);
+  const submit = async () => {
+    try {
+      await saveQuote({
+        firstName: state.firstName, lastName: state.lastName,
+        phone: state.phone, email: state.email,
+        propertyType: state.propertyType, size: state.size,
+        stories: state.stories,
+        origin: state.origin, destination: state.destination,
+        items: state.items, specialItems: state.specialItems,
+        services: state.services,
+        boxes: state.boxes, crew: state.crew, promoCode: state.promoCode,
+        moveDate: state.moveDate, flexibility: state.flexibility,
+        notes: state.notes,
+        estimateLow: estimate.low, estimateHigh: estimate.high,
+      });
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Failed to submit quote:', error);
+      alert('There was an error submitting your quote. Please try again or call us at (512) 641-0949');
+    }
   };
 
   const goNext = () => {

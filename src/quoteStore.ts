@@ -159,8 +159,38 @@ const SEED_QUOTES: QuoteRecord[] = [
   },
 ];
 
-/* ─── Storage key ─── */
+/* ─── Storage configuration ─── */
 const STORAGE_KEY = 'bsm_quotes';
+
+// Supabase configuration (from environment variables)
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const USE_SUPABASE = !!SUPABASE_URL && !!SUPABASE_KEY;
+
+// Simple Supabase client for REST API (no SDK dependency)
+async function supabaseQuery(table: string, method: 'GET' | 'POST' | 'PATCH', data?: any) {
+  if (!USE_SUPABASE) return null;
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+  };
+
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/${table}`;
+    const response = await fetch(url, {
+      method,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (e) {
+    console.warn('Supabase query failed, falling back to localStorage:', e);
+    return null;
+  }
+}
 
 /* Older saved quotes stored items as a string[]; normalize to a count map so
    the dashboard renders consistently regardless of when a quote was captured. */
@@ -188,7 +218,7 @@ export function getQuotes(): QuoteRecord[] {
   }
 }
 
-export function saveQuote(q: Omit<QuoteRecord, 'id' | 'submittedAt' | 'status' | 'internalNotes'>): QuoteRecord {
+export async function saveQuote(q: Omit<QuoteRecord, 'id' | 'submittedAt' | 'status' | 'internalNotes'>): Promise<QuoteRecord> {
   const record: QuoteRecord = {
     ...q,
     id: `q-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -196,8 +226,45 @@ export function saveQuote(q: Omit<QuoteRecord, 'id' | 'submittedAt' | 'status' |
     status: 'new',
     internalNotes: '',
   };
+
+  // Save to localStorage as fallback
   const all = getQuotes();
   localStorage.setItem(STORAGE_KEY, JSON.stringify([record, ...all]));
+
+  // Try to save to Supabase
+  if (USE_SUPABASE) {
+    try {
+      await supabaseQuery('quotes', 'POST', {
+        id: record.id,
+        submitted_at: record.submittedAt,
+        status: record.status,
+        internal_notes: record.internalNotes,
+        first_name: record.firstName,
+        last_name: record.lastName,
+        phone: record.phone,
+        email: record.email,
+        property_type: record.propertyType,
+        size: record.size,
+        stories: record.stories || null,
+        boxes: record.boxes || null,
+        crew: record.crew || null,
+        promo_code: record.promoCode || null,
+        origin: record.origin,
+        destination: record.destination,
+        items: record.items,
+        special_items: record.specialItems,
+        services: record.services,
+        move_date: record.moveDate || null,
+        flexibility: record.flexibility,
+        notes: record.notes,
+        estimate_low: record.estimateLow || 0,
+        estimate_high: record.estimateHigh || 0,
+      });
+    } catch (e) {
+      console.warn('Failed to save quote to Supabase, but saved to localStorage:', e);
+    }
+  }
+
   return record;
 }
 
